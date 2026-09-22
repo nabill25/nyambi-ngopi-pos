@@ -27,15 +27,19 @@ export function usePromotions() {
   useEffect(() => {
     fetchPromotions();
 
-    const channel = supabase
-      .channel('promotions_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions' }, fetchPromotions)
+    const channelName = `promotions_changes_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions' }, () => {
+        fetchPromotions();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchPromotions]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createPromotion = async (data: Omit<Promotion, 'id' | 'created_at'>) => {
     const { error } = await supabase.from('promotions').insert(data);

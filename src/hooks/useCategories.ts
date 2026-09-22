@@ -37,15 +37,19 @@ export function useCategories() {
   useEffect(() => {
     fetchCategories();
 
-    const channel = supabase
-      .channel('categories_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, fetchCategories)
+    const channelName = `categories_changes_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
+        fetchCategories();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchCategories]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createCategory = async (category: Pick<Category, 'name' | 'icon' | 'color' | 'sort_order'>) => {
     const { data, error } = await supabase

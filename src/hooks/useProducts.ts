@@ -56,15 +56,19 @@ export function useProducts() {
     fetchProducts();
 
     // Realtime subscription
-    const channel = supabase
-      .channel('products_changes')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, fetchProducts)
+    const channelName = `products_changes_${Date.now()}`;
+    const channel = supabase.channel(channelName);
+    channel
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
+        fetchProducts();
+      })
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [fetchProducts]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const createProduct = async (product: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
     const { data, error } = await supabase
