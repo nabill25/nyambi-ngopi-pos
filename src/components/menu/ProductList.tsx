@@ -119,12 +119,7 @@ function ProductRow({ product, onEdit, onDelete, onToggle, onManageModifiers, on
   const stockStatus = getStockStatus(product);
 
   return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: 'spring', bounce: 0.3 }}
+    <div
       className={cn(
         'flex items-center gap-3 p-3 transition-colors glass-card',
         product.is_active ? 'hover:bg-white/40' : 'opacity-60'
@@ -202,6 +197,6 @@ function ProductRow({ product, onEdit, onDelete, onToggle, onManageModifiers, on
           <Trash2 size={15} />
         </button>
       </div>
-    </motion.div>
+    </div>
   );
 }

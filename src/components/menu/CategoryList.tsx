@@ -148,11 +148,7 @@ export function CategoryList({ categories, isLoading, onCreate, onUpdate, onDele
       ) : (
         <div className="space-y-2">
           {categories.map((cat, i) => (
-            <motion.div
-              layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: i * 0.05 }}
+            <div
               key={cat.id}
               className="flex items-center gap-3 p-3 transition-colors glass-card hover:bg-white/40"
             >
@@ -174,7 +170,7 @@ export function CategoryList({ categories, isLoading, onCreate, onUpdate, onDele
                   <Trash2 size={14} />
                 </button>
               </div>
-            </motion.div>
+            </div>
           ))}
         </div>
       )}
