@@ -169,12 +169,12 @@ export function POSPage() {
       <button
         onClick={() => setShowCartMobile(true)}
         className={cn(
-          'lg:hidden fixed bottom-6 right-6 z-30 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95',
-          itemCount === 0 && 'opacity-60'
+          'lg:hidden fixed bottom-6 right-6 z-50 w-14 h-14 rounded-2xl flex items-center justify-center transition-all duration-200 active:scale-95 touch-manipulation',
+          itemCount === 0 && 'opacity-70'
         )}
         style={{
           background: 'linear-gradient(135deg,#1f9c56,#45b975)',
-          boxShadow: '0 8px 32px rgba(31,156,86,0.50)',
+          boxShadow: '0 8px 32px rgba(31,156,86,0.55)',
           border: '1px solid rgba(69,185,117,0.4)',
         }}
       >
@@ -193,13 +193,13 @@ export function POSPage() {
       {/* ── Mobile: Cart Sheet ───────────────────────────── */}
       <AnimatePresence>
         {showCartMobile && (
-          <div className="lg:hidden fixed inset-0 z-40">
+          <div className="lg:hidden fixed inset-0 z-50">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="absolute inset-0"
-              style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)' }}
+              style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(6px)', WebkitBackdropFilter: 'blur(6px)' }}
               onClick={() => setShowCartMobile(false)}
             />
             <motion.div
@@ -207,22 +207,26 @@ export function POSPage() {
               animate={{ y: 0 }}
               exit={{ y: '100%' }}
               transition={{ type: 'spring', bounce: 0, duration: 0.35 }}
-              className="absolute bottom-0 left-0 right-0 rounded-t-3xl max-h-[80vh] flex flex-col shadow-2xl overflow-hidden"
+              className="absolute bottom-0 left-0 right-0 rounded-t-3xl flex flex-col shadow-2xl overflow-hidden"
               style={{
-                background: 'rgba(255,255,255,0.85)',
+                maxHeight: '88vh',
+                background: 'rgba(255,255,255,0.92)',
                 backdropFilter: 'blur(40px) saturate(200%)',
                 WebkitBackdropFilter: 'blur(40px) saturate(200%)',
                 border: '1px solid rgba(255,255,255,0.5)',
                 borderBottom: 'none',
               }}
             >
+              {/* Sheet header */}
               <div className="px-4 py-3 flex items-center justify-between flex-shrink-0"
                 style={{ borderBottom: '1px solid rgba(0,0,0,0.06)' }}>
+                {/* drag indicator */}
+                <div className="absolute top-2 left-1/2 -translate-x-1/2 w-10 h-1 rounded-full bg-slate-200" />
                 <h2 className="font-bold text-slate-800 text-sm">Pesanan</h2>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowHeldOrders(true)}
-                    className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95"
+                    className="relative flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-xs font-medium transition-all active:scale-95 touch-manipulation"
                     style={{ background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', color: '#2563eb' }}
                   >
                     <PauseCircle size={13} />
@@ -235,14 +239,15 @@ export function POSPage() {
                   </button>
                   <button
                     onClick={() => setShowCartMobile(false)}
-                    className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800"
+                    className="px-3 py-1.5 rounded-xl text-xs font-medium text-slate-500 hover:text-slate-800 touch-manipulation"
                     style={{ background: 'rgba(0,0,0,0.05)' }}
                   >
                     Tutup
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-hidden">
+              {/* Cart content — scrollable */}
+              <div className="flex-1 overflow-y-auto" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
                 <CartPanel onCheckout={() => { setShowCartMobile(false); setShowPayment(true); }} />
               </div>
             </motion.div>

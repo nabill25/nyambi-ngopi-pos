@@ -115,7 +115,7 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {/* Items list */}
-      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 overflow-x-hidden">
+      <div className="flex-1 overflow-y-auto px-3 py-3 space-y-2 overflow-x-hidden" style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}>
         <AnimatePresence mode="popLayout">
           {items.map((item) => (
             <motion.div

@@ -87,12 +87,11 @@ function ProductCard({ product, onTap, delay = 0 }: ProductCardProps) {
       initial={{ opacity: 0, y: 12, scale: 0.97 }}
       animate={{ opacity: 1, y: 0, scale: 1 }}
       transition={{ delay: delay * 0.5, duration: 0.28, type: 'spring', bounce: 0.3 }}
-      whileHover={!isOutOfStock ? { y: -4, scale: 1.02 } : {}}
-      whileTap={!isOutOfStock ? { scale: 0.96 } : {}}
+      whileTap={!isOutOfStock ? { scale: 0.94 } : {}}
       onClick={() => !isOutOfStock && onTap(product)}
       disabled={isOutOfStock}
       className={cn(
-        'glass-card text-left p-3 flex flex-col transition-all',
+        'glass-card text-left p-3 flex flex-col transition-all select-none touch-manipulation',
         isOutOfStock && 'opacity-50 cursor-not-allowed'
       )}
       style={isOutOfStock ? { filter: 'grayscale(0.4)' } : {}}
@@ -160,13 +159,9 @@ function ProductCard({ product, onTap, delay = 0 }: ProductCardProps) {
         )}
       </div>
 
-      {/* Add overlay on hover */}
+      {/* Add + icon (always visible on mobile, hover only on desktop) */}
       {!isOutOfStock && (
-        <motion.div
-          className="absolute inset-0 flex items-end justify-end p-2 pointer-events-none rounded-2xl"
-          initial={{ opacity: 0 }}
-          whileHover={{ opacity: 1 }}
-        >
+        <div className="absolute inset-0 flex items-end justify-end p-2 pointer-events-none rounded-2xl opacity-0 sm:opacity-0 group-hover:opacity-100">
           <div
             className="w-7 h-7 rounded-xl flex items-center justify-center"
             style={{
@@ -176,7 +171,7 @@ function ProductCard({ product, onTap, delay = 0 }: ProductCardProps) {
           >
             <Plus size={14} className="text-white" />
           </div>
-        </motion.div>
+        </div>
       )}
     </motion.button>
   );
