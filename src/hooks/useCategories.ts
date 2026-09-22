@@ -5,13 +5,13 @@ import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
 
 const CACHE_KEY = 'categories';
 
-export function useCategories() {
-  const [categories, setCategories] = useState<Category[]>(() => loadCache<Category[]>(CACHE_KEY) ?? []);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialCache = loadCache<Category[]>(CACHE_KEY) ?? [];
+  const [categories, setCategories] = useState<Category[]>(initialCache);
+  const [isLoading, setIsLoading] = useState(initialCache.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchCategories = useCallback(async () => {
-    setIsLoading(true);
+  const fetchCategories = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     setError(null);
     try {
       const { data, error } = await supabase
@@ -35,13 +35,14 @@ export function useCategories() {
   }, []);
 
   useEffect(() => {
-    fetchCategories();
+    const hasCache = loadCache<Category[]>(CACHE_KEY)?.length > 0;
+    fetchCategories(hasCache);
 
     const channelName = `categories_changes_${Date.now()}`;
     const channel = supabase.channel(channelName);
     channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'categories' }, () => {
-        fetchCategories();
+        fetchCategories(true);
       })
       .subscribe();
 

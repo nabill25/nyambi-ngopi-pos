@@ -39,7 +39,7 @@ export function Header({ onMenuClick, title }: HeaderProps) {
 
   return (
     <header
-      className="h-16 flex items-center gap-4 px-4 flex-shrink-0"
+      className="relative z-50 h-16 flex items-center gap-4 px-4 flex-shrink-0"
       style={{
         background: 'rgba(255,255,255,0.45)',
         backdropFilter: 'blur(24px) saturate(180%)',

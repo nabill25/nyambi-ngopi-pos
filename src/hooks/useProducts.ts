@@ -5,14 +5,14 @@ import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
 
 const CACHE_KEY = 'products';
 
-export function useProducts() {
-  const [products, setProducts] = useState<Product[]>(() => loadCache<Product[]>(CACHE_KEY) ?? []);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialCache = loadCache<Product[]>(CACHE_KEY) ?? [];
+  const [products, setProducts] = useState<Product[]>(initialCache);
+  const [isLoading, setIsLoading] = useState(initialCache.length === 0);
   const [error, setError] = useState<string | null>(null);
-  const [isFromCache, setIsFromCache] = useState(false);
+  const [isFromCache, setIsFromCache] = useState(initialCache.length > 0);
 
-  const fetchProducts = useCallback(async () => {
-    setIsLoading(true);
+  const fetchProducts = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     setError(null);
     try {
       const { data, error } = await supabase
@@ -53,14 +53,16 @@ export function useProducts() {
   }, []);
 
   useEffect(() => {
-    fetchProducts();
+    // If we have cache, load in background. If not, show loading.
+    const hasCache = loadCache<Product[]>(CACHE_KEY)?.length > 0;
+    fetchProducts(hasCache);
 
     // Realtime subscription
     const channelName = `products_changes_${Date.now()}`;
     const channel = supabase.channel(channelName);
     channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'products' }, () => {
-        fetchProducts();
+        fetchProducts(true); // background refresh on realtime changes
       })
       .subscribe();
 

@@ -3,13 +3,16 @@ import { supabase } from '../lib/supabase';
 import { Order, KitchenStatus } from '../types';
 import { toast } from 'sonner';
 
+let globalOrdersCache: Order[] = [];
+let hasFetchedOrders = false;
+
 export function useKitchenOrders() {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [orders, setOrders] = useState<Order[]>(globalOrdersCache);
+  const [isLoading, setIsLoading] = useState(!hasFetchedOrders);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchOrders = useCallback(async () => {
-    setIsLoading(true);
+  const fetchOrders = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     setError(null);
     try {
       const { data, error: err } = await supabase
@@ -20,7 +23,10 @@ export function useKitchenOrders() {
         .order('created_at', { ascending: true }); // Oldest first for kitchen
       
       if (err) throw err;
-      setOrders(data ?? []);
+      const fetched = data ?? [];
+      globalOrdersCache = fetched;
+      hasFetchedOrders = true;
+      setOrders(fetched);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Gagal memuat pesanan dapur');
     } finally {
@@ -29,7 +35,7 @@ export function useKitchenOrders() {
   }, []);
 
   useEffect(() => {
-    fetchOrders();
+    fetchOrders(hasFetchedOrders);
 
     // Subscribe to real-time changes
     const channel = supabase
