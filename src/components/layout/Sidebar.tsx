@@ -58,7 +58,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
-          className="fixed inset-0 z-30 lg:hidden animate-overlayIn"
+          className="fixed inset-0 z-50 lg:hidden animate-overlayIn"
           style={{ background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(4px)' }}
           onClick={onClose}
         />
@@ -67,7 +67,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
       {/* Sidebar — Frosted Dark Glass */}
       <aside
         className={cn(
-          'fixed left-0 top-0 z-40 h-full w-64 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+          'fixed left-0 top-0 z-[60] h-full w-64 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
           'lg:translate-x-0 lg:static lg:z-auto',
           isOpen ? 'translate-x-0' : '-translate-x-full',
           'glass-dark'

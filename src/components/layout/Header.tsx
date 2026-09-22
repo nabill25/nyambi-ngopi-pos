@@ -113,12 +113,12 @@ export function Header({ onMenuClick, title }: HeaderProps) {
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.93, y: -8 }}
               transition={{ duration: 0.18, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute right-0 top-full mt-2 w-72 rounded-2xl overflow-hidden z-50 origin-top-right"
+              className="absolute right-0 top-full mt-2 w-72 sm:w-80 rounded-2xl overflow-hidden z-50 origin-top-right"
               style={{
-                background: 'rgba(255,255,255,0.82)',
-                backdropFilter: 'blur(40px) saturate(200%)',
-                WebkitBackdropFilter: 'blur(40px) saturate(200%)',
-                border: '1px solid rgba(255,255,255,0.5)',
+                background: 'rgba(255,255,255,0.96)',
+                backdropFilter: 'blur(48px) saturate(200%)',
+                WebkitBackdropFilter: 'blur(48px) saturate(200%)',
+                border: '1px solid rgba(255,255,255,0.8)',
                 boxShadow: '0 20px 60px rgba(0,0,0,0.15), 0 4px 12px rgba(0,0,0,0.08)',
               }}
             >
