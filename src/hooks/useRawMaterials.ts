@@ -2,14 +2,18 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { RawMaterial } from '../types';
 import { toast } from 'sonner';
+import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
+
+const CACHE_KEY = 'raw_materials';
 
 export function useRawMaterials() {
-  const [materials, setMaterials] = useState<RawMaterial[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const initialCache = loadCache<RawMaterial[]>(CACHE_KEY) ?? [];
+  const [materials, setMaterials] = useState<RawMaterial[]>(initialCache);
+  const [isLoading, setIsLoading] = useState(initialCache.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchMaterials = useCallback(async () => {
-    setIsLoading(true);
+  const fetchMaterials = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     setError(null);
     try {
       const { data, error: err } = await supabase
@@ -19,15 +23,22 @@ export function useRawMaterials() {
       
       if (err) throw err;
       setMaterials(data ?? []);
+      saveCache(CACHE_KEY, data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat data bahan baku');
+      const cached = loadCache<RawMaterial[]>(CACHE_KEY);
+      if (isNetworkError(err) && cached) {
+        setMaterials(cached);
+      } else {
+        setError(err instanceof Error ? err.message : 'Gagal memuat data bahan baku');
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchMaterials();
+    const hasCache = (loadCache<RawMaterial[]>(CACHE_KEY)?.length ?? 0) > 0;
+    fetchMaterials(hasCache);
   }, [fetchMaterials]);
 
   const addMaterial = async (material: Omit<RawMaterial, 'id' | 'created_at' | 'updated_at'>) => {

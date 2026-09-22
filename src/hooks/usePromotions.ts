@@ -1,14 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
 import { Promotion } from '../types';
+import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
+
+const CACHE_KEY = 'promotions';
 
 export function usePromotions() {
-  const [promotions, setPromotions] = useState<Promotion[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const initialCache = loadCache<Promotion[]>(CACHE_KEY) ?? [];
+  const [promotions, setPromotions] = useState<Promotion[]>(initialCache);
+  const [isLoading, setIsLoading] = useState(initialCache.length === 0);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchPromotions = useCallback(async () => {
-    setIsLoading(true);
+  const fetchPromotions = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     setError(null);
     try {
       const { data, error } = await supabase
@@ -17,21 +21,28 @@ export function usePromotions() {
         .order('sort_order', { ascending: true });
       if (error) throw error;
       setPromotions(data ?? []);
+      saveCache(CACHE_KEY, data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Gagal memuat promo');
+      const cached = loadCache<Promotion[]>(CACHE_KEY);
+      if (isNetworkError(err) && cached) {
+        setPromotions(cached);
+      } else {
+        setError(err instanceof Error ? err.message : 'Gagal memuat promo');
+      }
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchPromotions();
+    const hasCache = (loadCache<Promotion[]>(CACHE_KEY)?.length ?? 0) > 0;
+    fetchPromotions(hasCache);
 
     const channelName = `promotions_changes_${Date.now()}`;
     const channel = supabase.channel(channelName);
     channel
       .on('postgres_changes', { event: '*', schema: 'public', table: 'promotions' }, () => {
-        fetchPromotions();
+        fetchPromotions(true);
       })
       .subscribe();
 
