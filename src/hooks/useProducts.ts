@@ -5,6 +5,7 @@ import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
 
 const CACHE_KEY = 'products';
 
+export function useProducts() {
   const initialCache = loadCache<Product[]>(CACHE_KEY) ?? [];
   const [products, setProducts] = useState<Product[]>(initialCache);
   const [isLoading, setIsLoading] = useState(initialCache.length === 0);
@@ -54,7 +55,7 @@ const CACHE_KEY = 'products';
 
   useEffect(() => {
     // If we have cache, load in background. If not, show loading.
-    const hasCache = loadCache<Product[]>(CACHE_KEY)?.length > 0;
+    const hasCache = (loadCache<Product[]>(CACHE_KEY)?.length ?? 0) > 0;
     fetchProducts(hasCache);
 
     // Realtime subscription

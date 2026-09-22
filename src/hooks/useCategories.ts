@@ -5,6 +5,7 @@ import { saveCache, loadCache, isNetworkError } from '../lib/offlineCache';
 
 const CACHE_KEY = 'categories';
 
+export function useCategories() {
   const initialCache = loadCache<Category[]>(CACHE_KEY) ?? [];
   const [categories, setCategories] = useState<Category[]>(initialCache);
   const [isLoading, setIsLoading] = useState(initialCache.length === 0);
@@ -35,7 +36,7 @@ const CACHE_KEY = 'categories';
   }, []);
 
   useEffect(() => {
-    const hasCache = loadCache<Category[]>(CACHE_KEY)?.length > 0;
+    const hasCache = (loadCache<Category[]>(CACHE_KEY)?.length ?? 0) > 0;
     fetchCategories(hasCache);
 
     const channelName = `categories_changes_${Date.now()}`;
