@@ -5,18 +5,58 @@ import { RawMaterial } from '../../types';
 import { formatCurrency } from '../../lib/utils';
 import { toast } from 'sonner';
 
+// Satuan umum yang dipakai operasional cafe (bahan basah, kering, & unit hitung).
+// "Lainnya..." tetap disediakan supaya bahan yang tidak umum tetap bisa dicatat.
+const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', 'pcs', 'pack', 'sachet', 'botol', 'box', 'cup'];
+
 export function RawMaterialsTab() {
   const { materials, isLoading, error, addMaterial, updateMaterial, deleteMaterial } = useRawMaterials();
-  
+
   const [isAdding, setIsAdding] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState({ name: '', unit: '', stock: '', cost: '' });
+  const [isCustomUnit, setIsCustomUnit] = useState(false);
 
   const resetForm = () => {
     setFormData({ name: '', unit: '', stock: '', cost: '' });
+    setIsCustomUnit(false);
     setIsAdding(false);
     setEditingId(null);
   };
+
+  const handleUnitSelect = (value: string) => {
+    if (value === '__custom__') {
+      setIsCustomUnit(true);
+      setFormData(p => ({ ...p, unit: '' }));
+    } else {
+      setIsCustomUnit(false);
+      setFormData(p => ({ ...p, unit: value }));
+    }
+  };
+
+  const renderUnitField = (borderClass: string) => (
+    <div className="space-y-1">
+      <select
+        value={isCustomUnit ? '__custom__' : formData.unit}
+        onChange={(e) => handleUnitSelect(e.target.value)}
+        className={`w-full px-3 py-1.5 border ${borderClass} rounded-lg text-sm bg-white text-slate-700`}
+      >
+        <option value="">Pilih satuan</option>
+        {UNIT_OPTIONS.map(u => <option key={u} value={u}>{u}</option>)}
+        <option value="__custom__">Lainnya...</option>
+      </select>
+      {isCustomUnit && (
+        <input
+          type="text"
+          value={formData.unit}
+          onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))}
+          placeholder="Satuan khusus"
+          className={`w-full px-3 py-1.5 border ${borderClass} rounded-lg text-sm`}
+          autoFocus
+        />
+      )}
+    </div>
+  );
 
   const handleSave = async () => {
     if (!formData.name || !formData.unit) {
@@ -47,6 +87,7 @@ export function RawMaterialsTab() {
       stock: mat.stock.toString(),
       cost: mat.cost_per_unit.toString()
     });
+    setIsCustomUnit(mat.unit !== '' && !UNIT_OPTIONS.includes(mat.unit));
     setEditingId(mat.id);
     setIsAdding(false);
   };
@@ -100,10 +141,10 @@ export function RawMaterialsTab() {
                     <input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} placeholder="Biji Kopi Arabica" className="w-full px-3 py-1.5 border border-emerald-200 rounded-lg text-sm" autoFocus />
                   </td>
                   <td className="px-6 py-3">
-                    <input type="text" value={formData.unit} onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))} placeholder="gram / ml / pcs" className="w-full px-3 py-1.5 border border-emerald-200 rounded-lg text-sm" />
+                    {renderUnitField('border-emerald-200')}
                   </td>
                   <td className="px-6 py-3">
-                    <input type="number" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-1.5 border border-emerald-200 rounded-lg text-sm text-right" />
+                    <input type="number" step="any" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} placeholder="0" className="w-full px-3 py-1.5 border border-emerald-200 rounded-lg text-sm text-right" />
                   </td>
                   <td className="px-6 py-3">
                     <input type="number" value={formData.cost} onChange={(e) => setFormData(p => ({ ...p, cost: e.target.value }))} placeholder="0" className="w-full px-3 py-1.5 border border-emerald-200 rounded-lg text-sm text-right" />
@@ -130,8 +171,8 @@ export function RawMaterialsTab() {
                     {editingId === mat.id ? (
                       <>
                         <td className="px-6 py-3"><input type="text" value={formData.name} onChange={(e) => setFormData(p => ({ ...p, name: e.target.value }))} className="w-full px-3 py-1.5 border border-emerald-500 rounded-lg text-sm" /></td>
-                        <td className="px-6 py-3"><input type="text" value={formData.unit} onChange={(e) => setFormData(p => ({ ...p, unit: e.target.value }))} className="w-full px-3 py-1.5 border border-emerald-500 rounded-lg text-sm" /></td>
-                        <td className="px-6 py-3"><input type="number" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} className="w-full px-3 py-1.5 border border-emerald-500 rounded-lg text-sm text-right" /></td>
+                        <td className="px-6 py-3">{renderUnitField('border-emerald-500')}</td>
+                        <td className="px-6 py-3"><input type="number" step="any" value={formData.stock} onChange={(e) => setFormData(p => ({ ...p, stock: e.target.value }))} className="w-full px-3 py-1.5 border border-emerald-500 rounded-lg text-sm text-right" /></td>
                         <td className="px-6 py-3"><input type="number" value={formData.cost} onChange={(e) => setFormData(p => ({ ...p, cost: e.target.value }))} className="w-full px-3 py-1.5 border border-emerald-500 rounded-lg text-sm text-right" /></td>
                         <td className="px-6 py-3 text-right">
                           <div className="flex justify-end gap-2">
