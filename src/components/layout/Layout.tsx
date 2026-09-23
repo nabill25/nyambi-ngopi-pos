@@ -6,7 +6,6 @@ import { Header } from './Header';
 
 const PAGE_TITLES: Record<string, string> = {
   '/pos': 'Kasir',
-  '/kitchen': 'Kitchen Display System',
   '/menu': 'Manajemen Menu',
   '/orders': 'Riwayat Transaksi',
   '/customers': 'Database Pelanggan',

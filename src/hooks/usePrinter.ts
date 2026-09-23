@@ -124,8 +124,13 @@ export function usePrinter() {
       // Order Info
       e.align('left')
        .twoColumn(`No: ${order.order_number}`, formatDateTime(order.created_at), width)
-       .twoColumn(`Kasir: ${order.cashier_name ?? '-'}`, `Metode: ${order.payment_method.toUpperCase()}`, width)
-       .line('-', width);
+       .twoColumn(`Kasir: ${order.cashier_name ?? '-'}`, `Metode: ${order.payment_method.toUpperCase()}`, width);
+
+      if (order.customer_name) {
+        e.text(`Pelanggan: ${order.customer_name}`).newline();
+      }
+
+      e.line('-', width);
 
       // Items
       if (order.order_items) {

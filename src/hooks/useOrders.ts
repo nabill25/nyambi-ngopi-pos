@@ -16,6 +16,7 @@ interface CreateOrderParams {
   paidAmount: number;
   notes?: string;
   customerId?: string | null;
+  customerName?: string | null;
   promoCode?: string | null;
   promoName?: string | null;
   pointsToRedeem?: number;
@@ -125,7 +126,7 @@ export function useOrders() {
   }, [fetchOrders]);
 
   const createOrder = async (params: CreateOrderParams): Promise<Order> => {
-    const { items, paymentMethod, discountPercent, discountAmount, paidAmount, notes, customerId, promoCode, promoName, pointsToRedeem } = params;
+    const { items, paymentMethod, discountPercent, discountAmount, paidAmount, notes, customerId, customerName, promoCode, promoName, pointsToRedeem } = params;
 
     const subtotal = items.reduce((sum, item) => sum + item.subtotal, 0);
     let totalDiscount = discountAmount;
@@ -175,8 +176,8 @@ export function useOrders() {
       cashier_name: profile?.full_name ?? 'Kasir',
       shift_id: currentShift?.id ?? null,
       customer_id: customerId ?? null,
+      customer_name: customerName ?? null,
       status: 'completed',
-      kitchen_status: 'pending',
       payment_method: paymentMethod,
       subtotal,
       discount_amount: totalDiscount,

@@ -89,6 +89,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
         discountAmount,
         paidAmount: paid,
         customerId,
+        customerName,
         promoCode,
         promoName,
         pointsToRedeem: loyaltyActive ? Math.min(pointsToRedeem, maxRedeemable) : 0,

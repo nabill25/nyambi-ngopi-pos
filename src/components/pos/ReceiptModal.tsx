@@ -69,6 +69,7 @@ export function buildReceiptHTML(order: Order, settings: { store_name: string; s
   <div class="row"><span>No. Struk</span><span class="bold">${order.order_number}</span></div>
   <div class="row"><span>Tanggal</span><span>${formatDateTime(order.created_at)}</span></div>
   <div class="row"><span>Kasir</span><span>${order.cashier_name ?? '-'}</span></div>
+  ${order.customer_name ? `<div class="row"><span>Pelanggan</span><span>${order.customer_name}</span></div>` : ''}
   <div class="dash"></div>
 
   <div style="margin-bottom:4px;">${itemsHTML}</div>
@@ -193,6 +194,7 @@ export function ReceiptModal({ isOpen, order, onClose, onNewOrder }: ReceiptModa
                     ['No. Struk', order.order_number],
                     ['Tanggal', formatDateTime(order.created_at)],
                     ['Kasir', order.cashier_name ?? '-'],
+                    ...(order.customer_name ? [['Pelanggan', order.customer_name]] : []),
                   ].map(([k, v]) => (
                     <div key={k} className="flex justify-between text-[11px]">
                       <span className="text-gray-600">{k}</span>

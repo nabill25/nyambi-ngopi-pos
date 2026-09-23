@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { CartItem, OrderItem, PaymentMethod, KitchenStatus } from '../types';
+import { CartItem, OrderItem, PaymentMethod } from '../types';
 
 // Baris "orders" yang sudah lengkap dihitung (subtotal/pajak/total/dll) di
 // saat transaksi terjadi — dibuat sekali di sisi klien, lalu dikirim apa
@@ -13,8 +13,8 @@ export interface ResolvedOrderPayload {
   cashier_name: string;
   shift_id: string | null;
   customer_id: string | null;
+  customer_name: string | null;
   status: 'completed';
-  kitchen_status: KitchenStatus;
   payment_method: PaymentMethod;
   subtotal: number;
   discount_amount: number;

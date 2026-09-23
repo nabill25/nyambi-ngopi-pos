@@ -29,7 +29,8 @@ export function OrdersPage() {
 
   const filtered = orders.filter((o) =>
     o.order_number.toLowerCase().includes(search.toLowerCase()) ||
-    (o.cashier_name ?? '').toLowerCase().includes(search.toLowerCase())
+    (o.cashier_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
+    (o.customer_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
 
   const handleViewDetail = async (orderId: string) => {
@@ -193,6 +194,12 @@ export function OrdersPage() {
                             <span className="text-slate-500 text-xs">{order.cashier_name}</span>
                           </>
                         )}
+                        {order.customer_name && (
+                          <>
+                            <span className="text-slate-300 text-xs">·</span>
+                            <span className="text-slate-500 text-xs">{order.customer_name}</span>
+                          </>
+                        )}
                       </div>
                     </div>
                     <div className="text-right flex-shrink-0">
@@ -263,6 +270,7 @@ export function OrdersPage() {
                   {[
                     ['Tanggal', formatDateTime(detailOrder.created_at)],
                     ['Kasir', detailOrder.cashier_name ?? '-'],
+                    ...(detailOrder.customer_name ? [['Pelanggan', detailOrder.customer_name]] : []),
                     ['Metode Bayar', getPaymentMethodLabel(detailOrder.payment_method)],
                     ['Status', getStatusLabel(detailOrder.status)],
                   ].map(([k, v]) => (

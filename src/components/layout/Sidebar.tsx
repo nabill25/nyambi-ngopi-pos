@@ -10,7 +10,6 @@ import {
   LogOut,
   Lock,
   ChevronRight,
-  MonitorPlay,
 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { useAuthStore } from '../../store/authStore';
@@ -26,7 +25,6 @@ interface NavItem {
 
 const NAV_ITEMS: NavItem[] = [
   { to: '/pos', icon: ShoppingCart, label: 'Kasir' },
-  { to: '/kitchen', icon: MonitorPlay, label: 'Dapur (KDS)' },
   { to: '/menu', icon: UtensilsCrossed, label: 'Menu', adminOnly: true },
   { to: '/orders', icon: ClipboardList, label: 'Transaksi' },
   { to: '/customers', icon: Users, label: 'Pelanggan', adminOnly: true },

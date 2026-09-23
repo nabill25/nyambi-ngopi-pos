@@ -4,7 +4,6 @@
 
 export type UserRole = 'owner' | 'admin' | 'cashier';
 export type OrderStatus = 'pending' | 'completed' | 'cancelled';
-export type KitchenStatus = 'pending' | 'preparing' | 'ready' | 'delivered';
 export type PaymentMethod = 'cash' | 'qris' | 'transfer';
 
 // ── Profiles ─────────────────────────────────────────────────
@@ -159,8 +158,8 @@ export interface Order {
   cashier_name?: string;
   shift_id?: string | null;
   customer_id?: string | null;
+  customer_name?: string | null;
   status: OrderStatus;
-  kitchen_status: KitchenStatus;
   payment_method: PaymentMethod;
   subtotal: number;
   discount_amount: number;

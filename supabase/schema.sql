@@ -121,11 +121,13 @@ CREATE TABLE IF NOT EXISTS public.orders (
   notes TEXT,
   cancel_reason TEXT,                       -- alasan saat order di-void
   customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL,
+  customer_name TEXT,                       -- snapshot nama pelanggan saat transaksi, untuk struk & riwayat
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_id UUID REFERENCES public.customers(id) ON DELETE SET NULL;
+ALTER TABLE public.orders ADD COLUMN IF NOT EXISTS customer_name TEXT;
 CREATE INDEX IF NOT EXISTS idx_orders_customer ON public.orders(customer_id);
 
 -- ============================================================

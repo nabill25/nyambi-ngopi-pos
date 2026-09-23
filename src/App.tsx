@@ -13,7 +13,6 @@ import { LockScreen } from './components/auth/LockScreen';
 import { Layout } from './components/layout/Layout';
 import { LoginPage } from './pages/LoginPage';
 import { POSPage } from './pages/POSPage';
-import { KitchenPage } from './pages/KitchenPage';
 import { MenuPage } from './pages/MenuPage';
 import { OrdersPage } from './pages/OrdersPage';
 import { ReportsPage } from './pages/ReportsPage';
@@ -134,7 +133,6 @@ export default function App() {
         >
           <Route index element={<Navigate to="/pos" replace />} />
           <Route path="pos" element={<POSPage />} />
-          <Route path="kitchen" element={<KitchenPage />} />
           <Route path="orders" element={<OrdersPage />} />
           <Route
             path="menu"
