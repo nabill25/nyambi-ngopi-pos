@@ -158,11 +158,20 @@ export function useReports() {
   thead th:last-child, thead th:nth-child(5), thead th:nth-child(6), thead th:nth-child(7) { text-align: right; }
   tbody td { border-bottom: 1px solid #e2e8f0; font-size: 10px; }
   .footer { margin-top: 16px; text-align: center; font-size: 9px; color: #94a3b8; }
-  .print-btn { margin: 16px 0; padding: 10px 24px; background: #1f9c56; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .print-btn { padding: 10px 24px; background: #1f9c56; color: white; border: none; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
   .print-btn:hover { background: #0d3d20; }
+  .back-btn { padding: 10px 24px; background: #fff; color: #334155; border: 1px solid #cbd5e1; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .back-btn:hover { background: #f1f5f9; }
+  .action-bar { position: sticky; top: 0; z-index: 20; background: #fff; padding: 12px 0; display: flex; gap: 10px; justify-content: center; align-items: center; flex-wrap: wrap; border-bottom: 1px solid #e2e8f0; }
 </style>
 </head><body>
-<div class="header">
+<div class="no-print action-bar">
+  <button class="back-btn" onclick="goBackOrClose()">← Kembali</button>
+  <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan sebagai PDF</button>
+</div>
+<p class="no-print" style="font-size:10px;color:#94a3b8;text-align:center;margin:6px 0 0;">Gunakan "Save as PDF" pada dialog cetak untuk menyimpan sebagai file PDF</p>
+
+<div class="header" style="margin-top:12px;">
   <div>
     <h1>Laporan Penjualan</h1>
     <p>Nyambi Ngopi POS &nbsp;·&nbsp; Periode: ${rangeLabel}</p>
@@ -181,10 +190,21 @@ export function useReports() {
   <div class="card"><div class="card-label">Profit Margin</div><div class="card-value">${profitMargin}%</div></div>
 </div>
 
-<div class="no-print" style="text-align:center;">
-  <button class="print-btn" onclick="window.print()">🖨️ Cetak / Simpan sebagai PDF</button>
-  <p style="font-size:10px;color:#94a3b8;margin-top:4px;">Gunakan "Save as PDF" pada dialog cetak untuk menyimpan sebagai file PDF</p>
-</div>
+<script>
+  // window.close() sering diblokir di browser mobile untuk tab yang dibuka
+  // sebagai "tab baru" (bukan popup asli). Coba tutup, dan kalau masih
+  // kebuka setelah itu, ganti isi halaman dengan instruksi jelas supaya
+  // pengguna tidak "macet" tanpa tahu harus apa.
+  function goBackOrClose() {
+    window.close();
+    setTimeout(function () {
+      document.body.innerHTML = '<div style="padding:60px 24px;text-align:center;font-family:Arial,sans-serif;">' +
+        '<p style="font-size:15px;color:#334155;font-weight:600;margin-bottom:6px;">Laporan sudah selesai ditampilkan</p>' +
+        '<p style="font-size:13px;color:#94a3b8;">Tab ini tidak bisa ditutup otomatis oleh browser. Silakan tutup tab ini secara manual untuk kembali ke aplikasi.</p>' +
+        '</div>';
+    }, 250);
+  }
+</script>
 
 <table>
   <thead>
