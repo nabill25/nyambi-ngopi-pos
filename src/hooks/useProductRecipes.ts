@@ -32,7 +32,7 @@ export function useProductRecipes(productId: string | null) {
     fetchRecipes();
   }, [fetchRecipes]);
 
-  const addRecipe = async (rawMaterialId: string, quantityRequired: number) => {
+  const addRecipe = async (rawMaterialId: string, quantityRequired: number, unit: string) => {
     if (!productId) return;
     try {
       const { data, error } = await supabase
@@ -40,7 +40,8 @@ export function useProductRecipes(productId: string | null) {
         .insert([{ 
           product_id: productId, 
           raw_material_id: rawMaterialId, 
-          quantity_required: quantityRequired 
+          quantity_required: quantityRequired,
+          unit: unit,
         }])
         .select('*, raw_material:raw_materials(*)')
         .single();

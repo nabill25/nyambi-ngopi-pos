@@ -4,6 +4,8 @@ import { useProductRecipes } from '../../hooks/useProductRecipes';
 import { useRawMaterials } from '../../hooks/useRawMaterials';
 import { Product } from '../../types';
 
+const UNIT_OPTIONS = ['g', 'kg', 'ml', 'L', 'pcs', 'pack', 'sachet', 'botol', 'box', 'cup', 'sdm', 'sdt'];
+
 interface ProductRecipeManagerProps {
   product: Product | null;
   onClose: () => void;
@@ -14,6 +16,8 @@ export function ProductRecipeManager({ product, onClose }: ProductRecipeManagerP
   const { materials } = useRawMaterials();
   const [selectedMaterial, setSelectedMaterial] = useState('');
   const [quantity, setQuantity] = useState('');
+  const [unit, setUnit] = useState('g');
+  const [isCustomUnit, setIsCustomUnit] = useState(false);
 
   if (!product) return null;
 
@@ -21,15 +25,42 @@ export function ProductRecipeManager({ product, onClose }: ProductRecipeManagerP
     if (!selectedMaterial || !quantity) return;
     const qty = parseFloat(quantity);
     if (isNaN(qty) || qty <= 0) return;
-    await addRecipe(selectedMaterial, qty);
+    // Simpan quantity + unit pilihan user ke database
+    await addRecipe(selectedMaterial, qty, isCustomUnit ? unit : unit);
     setSelectedMaterial('');
     setQuantity('');
+    setUnit('g');
+    setIsCustomUnit(false);
+  };
+
+  const handleUnitChange = (val: string) => {
+    if (val === '__custom__') {
+      setIsCustomUnit(true);
+      setUnit('');
+    } else {
+      setIsCustomUnit(false);
+      setUnit(val);
+    }
+  };
+
+  // Saat bahan dipilih, auto-set satuan ke satuan bahan baku sebagai default
+  const handleMaterialChange = (matId: string) => {
+    setSelectedMaterial(matId);
+    setQuantity('');
+    const mat = materials.find(m => m.id === matId);
+    if (mat) {
+      if (UNIT_OPTIONS.includes(mat.unit)) {
+        setIsCustomUnit(false);
+        setUnit(mat.unit);
+      } else {
+        setIsCustomUnit(true);
+        setUnit(mat.unit);
+      }
+    }
   };
 
   // Bahan yang belum ada di resep
   const availableMaterials = materials.filter(m => !recipes.find(r => r.raw_material_id === m.id));
-
-  // Satuan bahan yang sedang dipilih (untuk tampilan di samping input)
   const selectedMat = materials.find(m => m.id === selectedMaterial);
 
   return (
@@ -87,10 +118,13 @@ export function ProductRecipeManager({ product, onClose }: ProductRecipeManagerP
                     </p>
                     <p className="text-xs text-slate-500">per porsi / per sajian</p>
                   </div>
-                  {/* Quantity + unit dari raw_material */}
+                  {/* Tampilkan satuan dari resep (bukan dari bahan baku) */}
                   <div className="flex items-baseline gap-1 flex-shrink-0 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-1.5">
                     <span className="text-lg font-bold text-emerald-600">{recipe.quantity_required}</span>
-                    <span className="text-xs text-emerald-500 font-semibold">{recipe.raw_material?.unit}</span>
+                    <span className="text-xs text-emerald-500 font-semibold">
+                      {/* Tampilkan unit resep jika ada, fallback ke unit bahan baku */}
+                      {recipe.unit ?? recipe.raw_material?.unit}
+                    </span>
                   </div>
                   <button
                     onClick={() => deleteRecipe(recipe.id)}
@@ -115,62 +149,76 @@ export function ProductRecipeManager({ product, onClose }: ProductRecipeManagerP
               <label className="text-xs font-medium text-slate-500">Bahan Baku</label>
               <select
                 value={selectedMaterial}
-                onChange={(e) => { setSelectedMaterial(e.target.value); setQuantity(''); }}
+                onChange={(e) => handleMaterialChange(e.target.value)}
                 className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400 transition-all"
               >
                 <option value="">Pilih bahan baku...</option>
                 {availableMaterials.map(m => (
-                  <option key={m.id} value={m.id}>{m.name} — satuan: {m.unit} (stok: {m.stock} {m.unit})</option>
+                  <option key={m.id} value={m.id}>{m.name} (stok: {m.stock} {m.unit})</option>
                 ))}
               </select>
             </div>
 
-            {/* Input jumlah — satuan mengikuti bahan */}
-            <div className="space-y-1">
-              <label className="text-xs font-medium text-slate-500">
-                Jumlah Pemakaian
-                {selectedMat && (
-                  <span className="ml-2 text-emerald-600 font-semibold">
-                    (dalam {selectedMat.unit})
-                  </span>
-                )}
-              </label>
-              <div className="flex gap-2">
+            {/* Jumlah + Satuan */}
+            <div className="flex gap-2">
+              <div className="flex-1 space-y-1">
+                <label className="text-xs font-medium text-slate-500">Jumlah Pemakaian</label>
                 <input
                   type="number"
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
-                  placeholder={selectedMat ? `cth: 18 (${selectedMat.unit})` : 'Pilih bahan dulu...'}
+                  placeholder="cth: 18"
                   step="any"
                   min={0}
                   disabled={!selectedMaterial}
-                  className="flex-1 bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400 transition-all font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400 transition-all font-mono disabled:opacity-50"
                 />
-                {/* Badge satuan */}
-                {selectedMat && (
-                  <div className="flex items-center justify-center px-4 py-3 bg-white border border-slate-200 rounded-xl text-sm font-bold text-emerald-600 min-w-[64px]">
-                    {selectedMat.unit}
-                  </div>
-                )}
               </div>
-              {selectedMat && (
-                <p className="text-xs text-slate-400 mt-1">
-                  💡 Satuan mengikuti definisi bahan baku. Untuk mengubah satuan, edit bahan baku terlebih dahulu.
-                </p>
-              )}
+              <div className="w-32 space-y-1">
+                <label className="text-xs font-medium text-slate-500">
+                  Satuan
+                  {selectedMat && (
+                    <span className="ml-1 text-slate-400">(default: {selectedMat.unit})</span>
+                  )}
+                </label>
+                <select
+                  value={isCustomUnit ? '__custom__' : unit}
+                  onChange={(e) => handleUnitChange(e.target.value)}
+                  disabled={!selectedMaterial}
+                  className="w-full bg-white border border-slate-200 rounded-xl px-3 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-400 transition-all disabled:opacity-50"
+                >
+                  {UNIT_OPTIONS.map(u => (
+                    <option key={u} value={u}>{u}</option>
+                  ))}
+                  <option value="__custom__">Lainnya...</option>
+                </select>
+              </div>
             </div>
+
+            {/* Input satuan custom */}
+            {isCustomUnit && (
+              <input
+                type="text"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="Tulis satuan (misal: lembar...)"
+                className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 transition-all"
+                autoFocus
+              />
+            )}
 
             {/* Preview + tombol tambah */}
             <div className="flex items-center gap-3 pt-1">
               {selectedMat && quantity && parseFloat(quantity) > 0 && (
                 <p className="flex-1 text-xs text-slate-500">
-                  Pakai <span className="font-bold text-emerald-700">{quantity} {selectedMat.unit}</span>{' '}
+                  Pakai{' '}
+                  <span className="font-bold text-emerald-700">{quantity} {isCustomUnit ? unit : unit}</span>{' '}
                   <span className="text-slate-600">{selectedMat.name}</span> per sajian
                 </p>
               )}
               <button
                 onClick={handleAddRecipe}
-                disabled={!selectedMaterial || !quantity || parseFloat(quantity) <= 0}
+                disabled={!selectedMaterial || !quantity || parseFloat(quantity) <= 0 || !unit}
                 className="flex items-center gap-2 px-5 py-3 bg-emerald-500 hover:bg-emerald-400 disabled:opacity-40 disabled:cursor-not-allowed rounded-xl text-white font-semibold text-sm transition-all active:scale-95 ml-auto"
               >
                 <Plus size={16} />

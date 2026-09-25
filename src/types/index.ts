@@ -35,6 +35,7 @@ export interface ProductRecipe {
   product_id: string;
   raw_material_id: string;
   quantity_required: number;
+  unit?: string | null;  // satuan khusus untuk resep ini (bisa berbeda dari satuan bahan baku)
   created_at: string;
   // joined
   raw_material?: RawMaterial;
