@@ -1,16 +1,14 @@
 import { useState } from 'react';
-import { X, Banknote, Smartphone, Building2, ChevronRight, ArrowLeft } from 'lucide-react';
+import { X, ChevronRight, ArrowLeft, UserRound } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useCartStore } from '../../store/cartStore';
 import { useSettingsStore } from '../../store/settingsStore';
 import { formatCurrency, cn, getPaymentMethodLabel, playSuccessSound } from '../../lib/utils';
-import { PaymentMethod, Order, Customer } from '../../types';
+import { PaymentMethod, Order } from '../../types';
 import { useOrders } from '../../hooks/useOrders';
 import { useOnlineStatus } from '../../hooks/useOnlineStatus';
 import { usePrinter } from '../../hooks/usePrinter';
 import { toast } from 'sonner';
-import { CustomerPickerModal } from './CustomerPickerModal';
-import { PaymentCustomerSection } from './PaymentCustomerSection';
 import { LoyaltyPointsSection } from './LoyaltyPointsSection';
 import { PaymentSummary } from './PaymentSummary';
 import { PaymentMethodSelector } from './PaymentMethodSelector';
@@ -35,12 +33,7 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
   const [paidAmount, setPaidAmount] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [showCustomerPicker, setShowCustomerPicker] = useState(false);
   const [showQrisModal, setShowQrisModal] = useState(false);
-
-  const handleSelectCustomer = (customer: Customer) => {
-    setCustomer(customer.id, customer.full_name, customer.loyalty_points);
-  };
 
   const total = getTotal();
   const subtotal = getSubtotal();
@@ -158,13 +151,20 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
               </div>
 
               <div className="p-6 space-y-5 max-h-[80vh] overflow-y-auto">
-                {/* Customer */}
-                <PaymentCustomerSection
-                  customerId={customerId}
-                  customerName={customerName}
-                  onPick={() => setShowCustomerPicker(true)}
-                  onClear={() => setCustomer(null, null)}
-                />
+                {/* Nama Billing */}
+                <div className="space-y-1.5">
+                  <p className="text-slate-500 text-xs font-medium uppercase tracking-wider">Nama Pelanggan (opsional)</p>
+                  <div className="relative">
+                    <UserRound size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input
+                      type="text"
+                      value={customerName ?? ''}
+                      onChange={(e) => setCustomer(null, e.target.value || null, 0)}
+                      placeholder="Nama untuk struk..."
+                      className="w-full bg-white border border-slate-200 rounded-xl pl-9 pr-4 py-2.5 text-slate-800 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500/50 focus:border-emerald-500/50 transition-all"
+                    />
+                  </div>
+                </div>
 
                 {loyaltyActive && (
                   <LoyaltyPointsSection
@@ -310,14 +310,6 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
         )}
       </AnimatePresence>
 
-      <CustomerPickerModal
-        isOpen={showCustomerPicker}
-        onClose={() => setShowCustomerPicker(false)}
-        onSelect={handleSelectCustomer}
-        onSelectName={(name) => {
-          setCustomer(null, name, 0);
-        }}
-      />
 
       <QrisPaymentModal
         isOpen={showQrisModal}
