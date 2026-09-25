@@ -8,13 +8,15 @@ interface PaymentCustomerSectionProps {
 }
 
 export function PaymentCustomerSection({ customerId, customerName, onPick, onClear }: PaymentCustomerSectionProps) {
-  if (customerId) {
+  if (customerName) {
     return (
       <div className="flex items-center gap-2.5 p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
         <div className="w-7 h-7 bg-emerald-500/20 rounded-full flex items-center justify-center flex-shrink-0">
           <UserRound size={14} className="text-emerald-700" />
         </div>
-        <span className="text-emerald-800 text-sm font-medium flex-1 truncate">{customerName}</span>
+        <span className="text-emerald-800 text-sm font-medium flex-1 truncate">
+          {customerName} {!customerId && <span className="text-emerald-600/70 text-xs font-normal">(Bukan Member)</span>}
+        </span>
         <button
           onClick={onClear}
           className="text-emerald-700 hover:text-red-500 transition-colors flex-shrink-0"

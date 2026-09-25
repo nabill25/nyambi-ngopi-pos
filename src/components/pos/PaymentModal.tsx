@@ -314,6 +314,9 @@ export function PaymentModal({ isOpen, onClose, onSuccess }: PaymentModalProps) 
         isOpen={showCustomerPicker}
         onClose={() => setShowCustomerPicker(false)}
         onSelect={handleSelectCustomer}
+        onSelectName={(name) => {
+          setCustomer(null, name, 0);
+        }}
       />
 
       <QrisPaymentModal

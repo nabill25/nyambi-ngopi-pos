@@ -7,9 +7,10 @@ interface CustomerPickerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSelect: (customer: Customer) => void;
+  onSelectName?: (name: string) => void;
 }
 
-export function CustomerPickerModal({ isOpen, onClose, onSelect }: CustomerPickerModalProps) {
+export function CustomerPickerModal({ isOpen, onClose, onSelect, onSelectName }: CustomerPickerModalProps) {
   const [search, setSearch] = useState('');
   const [showNewForm, setShowNewForm] = useState(false);
   const [newName, setNewName] = useState('');
@@ -45,7 +46,7 @@ export function CustomerPickerModal({ isOpen, onClose, onSelect }: CustomerPicke
 
       <div className="relative w-full sm:max-w-sm bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 overflow-hidden animate-slideUp sm:animate-scaleIn">
         <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100">
-          <h2 className="font-bold text-slate-800 text-base flex-1">Pilih Pelanggan</h2>
+          <h2 className="font-bold text-slate-800 text-base flex-1">Pilih Member / Pelanggan</h2>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-800 transition-colors">
             <X size={18} />
           </button>
@@ -68,7 +69,7 @@ export function CustomerPickerModal({ isOpen, onClose, onSelect }: CustomerPicke
             {isLoading ? (
               <div className="py-8 text-center text-slate-400 text-sm">Memuat...</div>
             ) : customers.length === 0 ? (
-              <div className="py-8 text-center text-slate-400 text-sm">Pelanggan tidak ditemukan</div>
+              <div className="py-8 text-center text-slate-400 text-sm">Member tidak ditemukan</div>
             ) : (
               customers.map((c) => (
                 <button
@@ -88,15 +89,28 @@ export function CustomerPickerModal({ isOpen, onClose, onSelect }: CustomerPicke
             )}
           </div>
 
-          {!showNewForm ? (
-            <button
-              onClick={() => { setShowNewForm(true); setNewName(search); }}
-              className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-400 transition-all text-sm"
-            >
-              <UserPlus size={15} />
-              <span>Tambah Pelanggan Baru</span>
-            </button>
-          ) : (
+          <div className="space-y-2 mt-4">
+            {search.trim() && onSelectName && (
+              <button
+                onClick={() => {
+                  onSelectName(search.trim());
+                  onClose();
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-all text-sm font-medium"
+              >
+                Gunakan Nama "{search.trim()}" (Bukan Member)
+              </button>
+            )}
+
+            {!showNewForm ? (
+              <button
+                onClick={() => { setShowNewForm(true); setNewName(search); }}
+                className="w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border border-dashed border-slate-200 text-slate-500 hover:text-emerald-600 hover:border-emerald-400 transition-all text-sm"
+              >
+                <UserPlus size={15} />
+                <span>Daftarkan Member Baru</span>
+              </button>
+            ) : (
             <div className="bg-white rounded-xl p-3 space-y-2 border border-slate-100 animate-fadeIn">
               <input
                 type="text"
@@ -131,6 +145,7 @@ export function CustomerPickerModal({ isOpen, onClose, onSelect }: CustomerPicke
               </div>
             </div>
           )}
+          </div>
         </div>
       </div>
     </div>
