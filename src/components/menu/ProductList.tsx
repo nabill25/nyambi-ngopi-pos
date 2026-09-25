@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, Edit2, Trash2, ToggleLeft, ToggleRight, Package, AlertCircle, Layers } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Product, Category } from '../../types';
 import { formatCurrency, cn, getStockStatus } from '../../lib/utils';
 
@@ -121,9 +121,10 @@ function ProductRow({ product, onEdit, onDelete, onToggle, onManageModifiers, on
   return (
     <div
       className={cn(
-        'flex items-center gap-3 p-3 transition-colors glass-card',
+        'flex items-center gap-3 p-3.5 transition-colors glass-card',
         product.is_active ? 'hover:bg-white/40' : 'opacity-60'
-      )}>
+      )}
+    >
       {/* Image / Icon */}
       <div className="w-12 h-12 rounded-xl overflow-hidden flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(255,255,255,0.5)' }}>
         {product.image_url ? (
@@ -158,43 +159,59 @@ function ProductRow({ product, onEdit, onDelete, onToggle, onManageModifiers, on
         </div>
       </div>
 
-      {/* Actions */}
-      <div className="flex items-center gap-1 flex-shrink-0">
+      {/* Actions — bigger, touch-friendly buttons */}
+      <div className="flex items-center gap-1.5 flex-shrink-0">
+        {/* Toggle aktif/nonaktif */}
         <button
           onClick={onToggle}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-slate-800 transition-colors"
           title={product.is_active ? 'Nonaktifkan' : 'Aktifkan'}
+          className={cn(
+            'p-2.5 rounded-xl transition-all active:scale-90',
+            product.is_active
+              ? 'text-green-500 bg-green-500/10 hover:bg-green-500/20'
+              : 'text-slate-400 bg-slate-100 hover:bg-slate-200'
+          )}
         >
           {product.is_active
-            ? <ToggleRight size={20} className="text-green-400" />
-            : <ToggleLeft size={20} className="text-slate-400" />
+            ? <ToggleRight size={20} />
+            : <ToggleLeft size={20} />
           }
         </button>
+
+        {/* Modifier / Varian */}
         <button
           onClick={onManageModifiers}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-blue-600 hover:bg-blue-500/10 transition-all active:scale-90"
-          title="Kelola varian & tambahan"
+          title="Varian & Tambahan"
+          className="p-2.5 rounded-xl text-slate-500 bg-slate-100 hover:text-blue-600 hover:bg-blue-500/10 transition-all active:scale-90"
         >
-          <Layers size={15} />
+          <Layers size={17} />
         </button>
+
+        {/* Resep bahan baku */}
         <button
           onClick={onManageRecipes}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-500/10 transition-all active:scale-90"
-          title="Kelola resep bahan baku"
+          title="Resep Bahan Baku"
+          className="p-2.5 rounded-xl text-slate-500 bg-slate-100 hover:text-amber-600 hover:bg-amber-500/10 transition-all active:scale-90"
         >
-          <Package size={15} />
+          <Package size={17} />
         </button>
+
+        {/* Edit */}
         <button
           onClick={onEdit}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-emerald-600 hover:bg-emerald-500/10 transition-all active:scale-90"
+          title="Edit produk"
+          className="p-2.5 rounded-xl text-slate-500 bg-slate-100 hover:text-emerald-600 hover:bg-emerald-500/10 transition-all active:scale-90"
         >
-          <Edit2 size={15} />
+          <Edit2 size={17} />
         </button>
+
+        {/* Hapus */}
         <button
           onClick={onDelete}
-          className="p-1.5 rounded-lg text-slate-500 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
+          title="Hapus produk"
+          className="p-2.5 rounded-xl text-slate-500 bg-slate-100 hover:text-red-500 hover:bg-red-500/10 transition-all active:scale-90"
         >
-          <Trash2 size={15} />
+          <Trash2 size={17} />
         </button>
       </div>
     </div>
