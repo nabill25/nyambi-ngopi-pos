@@ -317,6 +317,7 @@ export function OrdersPage() {
                     <span>Total</span>
                     <span style={{ color: '#1f9c56' }}>{formatCurrency(detailOrder.total_amount)}</span>
                   </div>
+                  <div className="flex justify-between text-sm text-slate-500"><span>Bayar ({getPaymentMethodLabel(detailOrder.payment_method)})</span><span>{formatCurrency(detailOrder.paid_amount)}</span></div>
                   {detailOrder.change_amount > 0 && <div className="flex justify-between text-sm text-slate-500"><span>Kembalian</span><span>{formatCurrency(detailOrder.change_amount)}</span></div>}
                   {!!detailOrder.points_earned && detailOrder.points_earned > 0 && <div className="flex justify-between text-sm text-slate-400"><span>Poin didapat</span><span>+{detailOrder.points_earned}</span></div>}
                 </div>
