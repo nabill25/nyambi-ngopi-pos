@@ -1,6 +1,6 @@
-import { Shift, ShiftCashFlow, ShiftReportData, ShiftSummary, StoreSettings } from '../types';
+import { Shift, ShiftCashFlow, ShiftOrderLine, ShiftReportData, ShiftSummary, StoreSettings } from '../types';
 import { EscPosEncoder, toPrintableAscii } from './escpos';
-import { escapeHtml, formatCurrency, formatDateTime } from './utils';
+import { escapeHtml, formatCurrency, formatDateTime, formatTime, getPaymentMethodLabel } from './utils';
 
 type PaperSize = StoreSettings['receipt_paper_size'];
 
@@ -25,6 +25,7 @@ export function toShiftReportData(shift: Shift, summary: ShiftSummary, storeName
     transferTotal: summary.transferTotal,
     grandTotal: summary.grandTotal,
     cashFlows: summary.cashFlows,
+    orders: summary.orders,
     expectedCash: summary.expectedCash,
     closingCash: shift.closing_cash,
     difference: shift.cash_difference,
@@ -67,6 +68,14 @@ export function buildShiftReportHTML(report: ShiftReportData, paperSize: PaperSi
   const closedAtText = isShiftReportClosed(report) ? formatDateTime(report.closedAt) : 'Sedang berjalan';
   const notesBlock = report.notes ? `<div class="dash"></div><div>Catatan: ${escapeHtml(report.notes)}</div>` : '';
 
+  // Daftar tiap transaksi selesai pada shift ini: nomor struk + total, lalu jam + metode bayar
+  const orderRow = (o: ShiftOrderLine) =>
+    `<div class="tx"><div class="row"><span class="desc">${escapeHtml(o.order_number)}</span><span>${formatCurrency(o.total_amount)}</span></div>`
+    + `<div class="sm">${formatTime(o.created_at)} · ${getPaymentMethodLabel(o.payment_method)}</div></div>`;
+  const ordersBlock = report.orders.length > 0
+    ? `<div class="dash"></div><div class="bold">Daftar Transaksi (${report.orders.length})</div>${report.orders.map(orderRow).join('')}`
+    : '';
+
   return `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Laporan Tutup Kasir</title>
 <style>
   @page { size: ${paperSize} auto; margin: 4mm; }
@@ -78,6 +87,7 @@ export function buildShiftReportHTML(report: ShiftReportData, paperSize: PaperSi
   .bold { font-weight: 700; }
   .row { display: flex; justify-content: space-between; }
   .desc { flex: 1; padding-right: 8px; word-break: break-word; }
+  .tx { margin-top: 3px; }
   .sm { font-size: 10px; color: #555; }
   .total-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; }
 </style></head><body>
@@ -105,6 +115,7 @@ export function buildShiftReportHTML(report: ShiftReportData, paperSize: PaperSi
   ${row('Kas Seharusnya', formatCurrency(report.expectedCash))}
   ${closingRows}
   ${notesBlock}
+  ${ordersBlock}
 
   <div class="dash"></div>
   <div class="center sm" style="color:#999;">— Nyambi Ngopi POS —</div>
@@ -182,6 +193,19 @@ export function buildShiftReportEscPos(report: ShiftReportData, paperSize: Paper
   const note = report.notes ? toPrintableAscii(report.notes).trim() : '';
   if (note) {
     e.line('-', width).text(`Catatan: ${note}`).newline();
+  }
+
+  if (report.orders.length > 0) {
+    e.line('-', width)
+     .bold(true)
+     .text(`Daftar Transaksi (${report.orders.length})`)
+     .newline()
+     .bold(false);
+    report.orders.forEach((order) => {
+      e.twoColumn(toPrintableAscii(order.order_number), idr(order.total_amount), width)
+       .text(`  ${formatTime(order.created_at)} ${getPaymentMethodLabel(order.payment_method)}`)
+       .newline();
+    });
   }
 
   e.newline()

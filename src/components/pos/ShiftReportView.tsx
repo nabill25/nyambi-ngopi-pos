@@ -1,5 +1,5 @@
-import { ShiftCashFlow, ShiftReportData } from '../../types';
-import { formatCurrency, formatDateTime } from '../../lib/utils';
+import { ShiftCashFlow, ShiftOrderLine, ShiftReportData } from '../../types';
+import { formatCurrency, formatDateTime, formatTime, getPaymentMethodLabel } from '../../lib/utils';
 import { cashFlowLabel, groupCashFlows, isShiftReportClosed } from '../../lib/shiftReport';
 
 interface ShiftReportViewProps {
@@ -55,6 +55,7 @@ export function ShiftReportView({ report }: ShiftReportViewProps) {
           <p className="text-xs">Catatan: {report.notes}</p>
         </>
       )}
+      <TransactionList orders={report.orders} />
       <div className="border-t border-dashed border-gray-400 my-2" />
       <p className="text-center text-xs text-gray-500">— Nyambi Ngopi POS —</p>
     </div>
@@ -88,6 +89,27 @@ function CashFlowSection({ title, sign, flows, total }: CashFlowSectionProps) {
         </div>
       )}
       <div className="border-t border-dashed border-gray-400 my-2" />
+    </>
+  );
+}
+
+// Daftar tiap transaksi selesai pada shift: nomor struk + total, lalu jam + metode bayar
+function TransactionList({ orders }: { orders: ShiftOrderLine[] }) {
+  if (orders.length === 0) return null;
+
+  return (
+    <>
+      <div className="border-t border-dashed border-gray-400 my-2" />
+      <p className="font-bold text-xs">Daftar Transaksi ({orders.length})</p>
+      {orders.map((order) => (
+        <div key={order.id} className="mt-1">
+          <div className="flex justify-between gap-2 text-xs">
+            <span className="flex-1 break-all">{order.order_number}</span>
+            <span className="flex-shrink-0">{formatCurrency(order.total_amount)}</span>
+          </div>
+          <p className="text-[10px] text-gray-500">{formatTime(order.created_at)} · {getPaymentMethodLabel(order.payment_method)}</p>
+        </div>
+      ))}
     </>
   );
 }

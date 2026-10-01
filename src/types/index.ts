@@ -229,6 +229,9 @@ export interface ShiftCashFlow {
   created_at: string;
 }
 
+// Satu baris transaksi selesai dalam daftar struk tutup kasir
+export type ShiftOrderLine = Pick<Order, 'id' | 'order_number' | 'payment_method' | 'total_amount' | 'created_at'>;
+
 export interface ShiftSummary {
   totalOrders: number;
   cashTotal: number;
@@ -237,6 +240,7 @@ export interface ShiftSummary {
   grandTotal: number;
   expectedCash: number;
   cashFlows: ShiftCashFlow[];
+  orders: ShiftOrderLine[];
 }
 
 // Shift yang baru ditutup + ringkasannya, ditahan di store supaya struk tutup kasir
@@ -260,6 +264,7 @@ export interface ShiftReportData {
   transferTotal: number;
   grandTotal: number;
   cashFlows: ShiftCashFlow[];
+  orders: ShiftOrderLine[];
   expectedCash: number;
   closingCash?: number | null;
   difference?: number | null;

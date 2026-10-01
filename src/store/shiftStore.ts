@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { ClosedShift, Shift, ShiftCashFlow, ShiftSummary } from '../types';
+import { ClosedShift, Shift, ShiftCashFlow, ShiftOrderLine, ShiftSummary } from '../types';
 
 interface ShiftStore {
   currentShift: Shift | null;
@@ -21,12 +21,13 @@ interface ShiftStore {
 async function computeSummary(shiftId: string, openingCash: number): Promise<ShiftSummary> {
   const { data, error } = await supabase
     .from('orders')
-    .select('total_amount, payment_method')
+    .select('id, order_number, payment_method, total_amount, created_at')
     .eq('shift_id', shiftId)
-    .eq('status', 'completed');
+    .eq('status', 'completed')
+    .order('created_at', { ascending: true });
   if (error) throw error;
 
-  const orders = data ?? [];
+  const orders = (data ?? []) as ShiftOrderLine[];
   const sumBy = (method: string) =>
     orders.filter((o) => o.payment_method === method).reduce((s, o) => s + (o.total_amount ?? 0), 0);
 
@@ -54,6 +55,7 @@ async function computeSummary(shiftId: string, openingCash: number): Promise<Shi
     grandTotal,
     expectedCash: openingCash + cashTotal + cashIn - cashOut,
     cashFlows: flows,
+    orders,
   };
 }
 
