@@ -20,8 +20,9 @@ interface AuthStore {
   setSessionError: (error: string | null) => void;
   fetchProfile: (userId: string) => Promise<void>;
   updatePin: (pin: string | null) => Promise<void>;
-  signOut: () => Promise<void>;
+  signOut: () => Promise<boolean>;
   isAdmin: () => boolean;
+  isSignOutBlocked: () => boolean;
 }
 
 export const useAuthStore = create<AuthStore>()(
@@ -61,17 +62,24 @@ export const useAuthStore = create<AuthStore>()(
         set({ profile: { ...profile, pin: pin ?? undefined } });
       },
 
+      // false = ditolak karena shift masih terbuka: tidak keluar dan layar kunci pun tidak dibuka
       signOut: async () => {
+        if (get().isSignOutBlocked()) return false;
         await supabase.auth.signOut();
         set({ user: null, session: null, profile: null });
         useShiftStore.getState().clearShift();
         useLockStore.getState().unlock();
+        return true;
       },
 
       isAdmin: () => {
         const role = get().profile?.role;
         return role === 'owner' || role === 'admin';
       },
+
+      // Kasir tidak boleh keluar selama shift-nya masih terbuka: tutup kasir dulu supaya kas
+      // direkonsiliasi. Admin/owner dikecualikan.
+      isSignOutBlocked: () => !get().isAdmin() && useShiftStore.getState().currentShift !== null,
     }),
     {
       name: 'auth-storage',

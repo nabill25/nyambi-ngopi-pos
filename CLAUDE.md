@@ -148,6 +148,10 @@ supabase/
 - Gunakan fungsi `formatCurrency(amount)` dari `src/lib/utils.ts`
 - Tidak ada desimal untuk IDR
 
+### Ketentuan Shift (Buka/Tutup Kasir)
+- Role `cashier` **tidak bisa Keluar (logout)** selama shift-nya masih terbuka — harus Tutup Kasir dulu. Berlaku di tombol Keluar menu samping dan di layar kunci PIN; `owner`/`admin` dikecualikan. Aturannya ada di `authStore` (`isSignOutBlocked` + `signOut`), jangan dilewati
+- Saat Tutup Kasir, `currentShift` langsung dikosongkan dan layar pindah ke Buka Kasir, jadi data struk tutup kasir (Z-report) ditahan di `shiftStore.closedShift` dan ditampilkan lewat `ClosedShiftModal`; struk dicetak otomatis (printer Bluetooth bila terhubung, selain itu dialog cetak browser)
+
 ---
 
 ## 🖨️ Cetak Struk

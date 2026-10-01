@@ -1,5 +1,6 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
+import { toast } from 'sonner';
 import {
   ShoppingCart,
   UtensilsCrossed,
@@ -41,9 +42,17 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { profile, signOut } = useAuthStore();
   const { lock } = useLockStore();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
 
   const handleSignOut = async () => {
-    await signOut();
+    const signedOut = await signOut();
+    if (!signedOut) {
+      toast.warning('Tutup kasir dulu sebelum keluar', {
+        description: 'Shift Anda masih terbuka. Tutup kasir lewat halaman Kasir, setelah itu Anda bisa keluar.',
+        action: pathname === '/pos' ? undefined : { label: 'Ke Kasir', onClick: () => { navigate('/pos'); onClose(); } },
+      });
+      return;
+    }
     navigate('/login');
   };
 

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Delete } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 import { useAuthStore } from '../../store/authStore';
 import { useLockStore } from '../../store/lockStore';
 import { Logo } from '../ui/Logo';
@@ -42,8 +43,15 @@ export function LockScreen() {
   const backspace = () => setPin((p) => p.slice(0, -1));
 
   const handleSignOutInstead = async () => {
-    unlock();
-    await signOut();
+    // signOut() sendiri yang membuka kunci layar kalau berhasil. Jangan unlock() lebih dulu: kalau
+    // keluar ditolak (shift masih terbuka), layar harus tetap terkunci, bukan terbuka tanpa PIN.
+    const signedOut = await signOut();
+    if (!signedOut) {
+      toast.warning('Tutup kasir dulu sebelum keluar', {
+        description: 'Shift masih terbuka. Masukkan PIN untuk membuka kunci, lalu tutup kasir dari halaman Kasir.',
+      });
+      return;
+    }
     navigate('/login');
   };
 
