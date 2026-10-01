@@ -207,7 +207,7 @@ export function useOrders() {
       discount_amount: item.discount_amount,
       discount_percent: item.discount_percent,
       subtotal: item.subtotal,
-      notes: item.notes || undefined,
+      notes: item.notes?.trim() || undefined,
       modifiers_snapshot: item.selectedModifiers && item.selectedModifiers.length > 0 ? item.selectedModifiers : null,
       created_at: createdAt,
     }));

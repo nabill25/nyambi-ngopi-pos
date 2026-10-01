@@ -2,7 +2,7 @@ import { useRef, useCallback } from 'react';
 import { X, Printer, CheckCircle2, ChevronRight, CloudOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Order } from '../../types';
-import { formatCurrency, formatDateTime, getPaymentMethodLabel } from '../../lib/utils';
+import { formatCurrency, formatDateTime, getPaymentMethodLabel, escapeHtml } from '../../lib/utils';
 import { useSettingsStore } from '../../store/settingsStore';
 
 interface ReceiptModalProps {
@@ -19,7 +19,7 @@ export function buildReceiptHTML(order: Order, settings: { store_name: string; s
     const modHTML = item.modifiers_snapshot && item.modifiers_snapshot.length > 0
       ? `<div style="padding-left:8px;color:#555;font-size:10px;">${item.modifiers_snapshot.map((m) => m.price_delta > 0 ? `${m.name} (+${formatCurrency(m.price_delta)})` : m.name).join(', ')}</div>`
       : '';
-    const noteHTML = item.notes ? `<div style="padding-left:8px;color:#888;font-size:10px;">📝 ${item.notes}</div>` : '';
+    const noteHTML = item.notes ? `<div style="padding-left:8px;color:#555;font-size:10px;">📝 ${escapeHtml(item.notes)}</div>` : '';
     return `
       <div>
         <div style="display:flex;justify-content:space-between;">

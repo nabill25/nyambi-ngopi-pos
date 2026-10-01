@@ -72,6 +72,28 @@ export function truncate(text: string, maxLength: number): string {
   return text.substring(0, maxLength) + '...';
 }
 
+// ── Print helpers ─────────────────────────────────────────────
+// Teks bebas (catatan, keterangan kas) yang masuk ke HTML cetak harus di-escape
+export function escapeHtml(text: string): string {
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+// Buka jendela cetak berisi HTML mandiri lalu panggil print(). false = popup diblokir browser.
+export function printHtml(html: string): boolean {
+  const printWindow = window.open('', '_blank', 'width=420,height=700');
+  if (!printWindow) return false;
+  printWindow.document.write(html);
+  printWindow.document.close();
+  printWindow.focus();
+  setTimeout(() => { printWindow.print(); printWindow.close(); }, 400);
+  return true;
+}
+
 // ── Payment method label ──────────────────────────────────────
 export function getPaymentMethodLabel(method: string): string {
   const labels: Record<string, string> = {

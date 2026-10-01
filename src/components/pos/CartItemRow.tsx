@@ -9,10 +9,14 @@ export function CartItemRow({ item }: { item: CartItem }) {
   const [showNotes, setShowNotes] = useState(false);
   const [notesInput, setNotesInput] = useState(item.notes ?? '');
 
-  const saveNotes = () => {
-    updateItemNotes(item.id, notesInput);
-    setShowNotes(false);
+  // Simpan ke keranjang sambil mengetik, bukan hanya saat menekan OK: catatan yang sudah
+  // diketik tidak boleh hilang (dan harus ikut tercetak di struk) kalau kasir langsung menekan Bayar.
+  const handleNotesChange = (value: string) => {
+    setNotesInput(value);
+    updateItemNotes(item.id, value);
   };
+
+  const closeNotes = () => setShowNotes(false);
 
   return (
     <div className="bg-white rounded-xl p-3 border border-slate-100 hover:border-slate-200 transition-colors animate-fadeIn">
@@ -80,14 +84,14 @@ export function CartItemRow({ item }: { item: CartItem }) {
           <input
             type="text"
             value={notesInput}
-            onChange={(e) => setNotesInput(e.target.value)}
+            onChange={(e) => handleNotesChange(e.target.value)}
             placeholder="Contoh: es batu dikit, less sugar..."
             className="flex-1 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
             autoFocus
-            onKeyDown={(e) => e.key === 'Enter' && saveNotes()}
+            onKeyDown={(e) => e.key === 'Enter' && closeNotes()}
           />
           <button
-            onClick={saveNotes}
+            onClick={closeNotes}
             className="px-2.5 py-1.5 bg-emerald-500 hover:bg-emerald-400 rounded-lg text-white text-xs transition-colors"
           >
             OK

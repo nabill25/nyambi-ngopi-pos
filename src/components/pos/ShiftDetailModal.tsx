@@ -1,8 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Printer } from 'lucide-react';
 import { useShiftStore } from '../../store/shiftStore';
 import { useSettingsStore } from '../../store/settingsStore';
+import { usePrinter } from '../../hooks/usePrinter';
 import { Shift, ShiftSummary } from '../../types';
+import { toShiftReportData } from '../../lib/shiftReport';
 import { ShiftReportView } from './ShiftReportView';
 
 interface ShiftDetailModalProps {
@@ -13,7 +15,7 @@ interface ShiftDetailModalProps {
 export function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
   const { getSummary } = useShiftStore();
   const { settings } = useSettingsStore();
-  const receiptRef = useRef<HTMLDivElement>(null);
+  const { printShiftReport } = usePrinter();
 
   const [summary, setSummary] = useState<ShiftSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,23 +32,7 @@ export function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
       .finally(() => setIsLoading(false));
   }, [shift, getSummary]);
 
-  const handlePrint = useCallback(() => {
-    const content = receiptRef.current;
-    if (!content) return;
-    const printWindow = window.open('', '_blank', 'width=400,height=600');
-    if (!printWindow) return;
-    printWindow.document.write(`
-      <html><head><title>Laporan Shift</title>
-      <style>
-        @page { size: 80mm auto; margin: 4mm; }
-        body { font-family: monospace; font-size: 12px; margin: 0; }
-        * { box-sizing: border-box; }
-      </style></head><body>${content.innerHTML}</body></html>
-    `);
-    printWindow.document.close();
-    printWindow.focus();
-    setTimeout(() => { printWindow.print(); printWindow.close(); }, 300);
-  }, []);
+  const report = shift && summary ? toShiftReportData(shift, summary, settings.store_name) : null;
 
   if (!shift) return null;
 
@@ -67,31 +53,15 @@ export function ShiftDetailModal({ shift, onClose }: ShiftDetailModalProps) {
             <div className="h-40 flex items-center justify-center text-slate-400 text-sm">Memuat...</div>
           ) : error ? (
             <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3 text-red-500 text-sm">{error}</div>
-          ) : summary ? (
-            <ShiftReportView
-              ref={receiptRef}
-              storeName={settings.store_name}
-              cashierName={shift.cashier_name ?? '-'}
-              openedAt={shift.opened_at}
-              closedAt={shift.closed_at}
-              openingCash={shift.opening_cash}
-              totalOrders={summary.totalOrders}
-              cashTotal={summary.cashTotal}
-              qrisTotal={summary.qrisTotal}
-              transferTotal={summary.transferTotal}
-              grandTotal={summary.grandTotal}
-              expectedCash={summary.expectedCash}
-              closingCash={shift.closing_cash}
-              difference={shift.cash_difference}
-              notes={shift.notes}
-            />
+          ) : report ? (
+            <ShiftReportView report={report} />
           ) : null}
         </div>
 
         <div className="px-6 py-4 border-t border-slate-100 flex gap-3">
           <button
-            onClick={handlePrint}
-            disabled={isLoading || !summary}
+            onClick={() => report && printShiftReport(report, settings)}
+            disabled={isLoading || !report}
             className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-slate-200 text-slate-700 hover:text-slate-800 hover:border-slate-300 transition-all active:scale-95 text-sm disabled:opacity-50"
           >
             <Printer size={16} />

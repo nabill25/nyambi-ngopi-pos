@@ -1,12 +1,25 @@
 import { useState, useCallback } from 'react';
-import { EscPosEncoder } from '../lib/escpos';
-import { Order, StoreSettings } from '../types';
-import { formatCurrency, formatDateTime } from '../lib/utils';
+import { EscPosEncoder, toPrintableAscii } from '../lib/escpos';
+import { buildShiftReportEscPos, buildShiftReportHTML } from '../lib/shiftReport';
+import { Order, ShiftReportData, StoreSettings } from '../types';
+import { formatCurrency, formatDateTime, printHtml } from '../lib/utils';
 import { toast } from 'sonner';
 
 let globalDevice: BluetoothDevice | null = null;
 let globalServer: BluetoothRemoteGATTServer | null = null;
 let globalCharacteristic: BluetoothRemoteGATTCharacteristic | null = null;
+
+// Send to printer in chunks (some BLE devices have MTU limits, standard is 512, safe is 100-512)
+async function sendToPrinter(characteristic: BluetoothRemoteGATTCharacteristic, data: Uint8Array) {
+  const CHUNK_SIZE = 512;
+
+  for (let i = 0; i < data.length; i += CHUNK_SIZE) {
+    const chunk = data.slice(i, i + CHUNK_SIZE);
+    await characteristic.writeValue(chunk as unknown as BufferSource);
+    // Small delay to prevent buffer overflow on cheap printers
+    await new Promise(r => setTimeout(r, 50));
+  }
+}
 
 export function usePrinter() {
   const [isConnected, setIsConnected] = useState<boolean>(!!globalCharacteristic);
@@ -143,6 +156,12 @@ export function usePrinter() {
             e.text(`  + ${item.modifiers_snapshot.map(m => m.name).join(', ')}`)
              .newline();
           }
+
+          const note = item.notes ? toPrintableAscii(item.notes).trim() : '';
+          if (note) {
+            e.text(`  Catatan: ${note}`)
+             .newline();
+          }
         });
       }
 
@@ -177,20 +196,30 @@ export function usePrinter() {
        .newline(4) // Extra space before cut
        .cut();
 
-      // Send to printer in chunks (some BLE devices have MTU limits, standard is 512, safe is 100-512)
-      const data = e.encode();
-      const CHUNK_SIZE = 512;
-      
-      for (let i = 0; i < data.length; i += CHUNK_SIZE) {
-        const chunk = data.slice(i, i + CHUNK_SIZE);
-        await globalCharacteristic.writeValue(chunk as unknown as BufferSource);
-        // Small delay to prevent buffer overflow on cheap printers
-        await new Promise(r => setTimeout(r, 50)); 
-      }
+      await sendToPrinter(globalCharacteristic, e.encode());
 
     } catch (error: any) {
       console.error('Print error:', error);
       toast.error('Gagal mencetak struk: ' + error.message);
+    }
+  }, []);
+
+  // Cetak struk tutup kasir: ke printer Bluetooth kalau terhubung, selain itu lewat dialog cetak browser.
+  const printShiftReport = useCallback(async (report: ShiftReportData, settings: StoreSettings) => {
+    const characteristic = globalCharacteristic;
+
+    if (!characteristic) {
+      if (!printHtml(buildShiftReportHTML(report, settings.receipt_paper_size))) {
+        toast.error('Pop-up diblokir browser. Izinkan pop-up untuk situs ini, lalu tekan Cetak.');
+      }
+      return;
+    }
+
+    try {
+      await sendToPrinter(characteristic, buildShiftReportEscPos(report, settings.receipt_paper_size));
+    } catch (error) {
+      console.error('Print error:', error);
+      toast.error('Gagal mencetak laporan tutup kasir: ' + (error instanceof Error ? error.message : 'Terjadi kesalahan'));
     }
   }, []);
 
@@ -225,6 +254,7 @@ export function usePrinter() {
     connect,
     disconnect,
     printReceipt,
+    printShiftReport,
     testPrint
   };
 }

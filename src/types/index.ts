@@ -225,7 +225,7 @@ export interface ShiftCashFlow {
   cashier_id: string;
   type: 'in' | 'out';
   amount: number;
-  description: string;
+  description: string | null;
   created_at: string;
 }
 
@@ -236,6 +236,34 @@ export interface ShiftSummary {
   transferTotal: number;
   grandTotal: number;
   expectedCash: number;
+  cashFlows: ShiftCashFlow[];
+}
+
+// Shift yang baru ditutup + ringkasannya, ditahan di store supaya struk tutup kasir
+// tetap bisa tampil/tercetak setelah currentShift dikosongkan.
+export interface ClosedShift {
+  shift: Shift;
+  summary: ShiftSummary;
+}
+
+// Isi lengkap struk tutup kasir (Z-report) — satu sumber data untuk preview layar,
+// cetak HTML (browser), dan cetak ESC/POS (printer Bluetooth).
+export interface ShiftReportData {
+  storeName: string;
+  cashierName: string;
+  openedAt: string;
+  closedAt?: string | null;
+  openingCash: number;
+  totalOrders: number;
+  cashTotal: number;
+  qrisTotal: number;
+  transferTotal: number;
+  grandTotal: number;
+  cashFlows: ShiftCashFlow[];
+  expectedCash: number;
+  closingCash?: number | null;
+  difference?: number | null;
+  notes?: string | null;
 }
 
 // ── Settings ─────────────────────────────────────────────────

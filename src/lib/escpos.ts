@@ -78,3 +78,14 @@ export class EscPosEncoder {
     return new Uint8Array(this.buffer);
   }
 }
+
+// text() memotong tiap karakter jadi 1 byte, jadi karakter non-ASCII (emoji, aksen, spasi NBSP
+// dari Intl) berubah jadi byte acak yang bisa terbaca printer sebagai perintah. Pakai ini untuk
+// teks bebas dari pengguna (catatan, keterangan kas) sebelum dicetak.
+export function toPrintableAscii(text: string): string {
+  return text
+    .replace(/\xA0/g, ' ')
+    .normalize('NFD')
+    .replace(/\p{M}/gu, '')
+    .replace(/[^\x20-\x7E]/g, '');
+}

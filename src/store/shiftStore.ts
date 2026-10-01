@@ -1,16 +1,20 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { Shift, ShiftSummary } from '../types';
+import { ClosedShift, Shift, ShiftCashFlow, ShiftSummary } from '../types';
 
 interface ShiftStore {
   currentShift: Shift | null;
+  // Shift yang baru saja ditutup. currentShift langsung dikosongkan saat tutup kasir (layar pindah
+  // ke "Buka Kasir"), jadi data struk tutup kasir ditahan di sini sampai kasir menekan "Selesai".
+  closedShift: ClosedShift | null;
   isLoading: boolean;
 
   fetchCurrentShift: (cashierId: string) => Promise<void>;
   openShift: (cashierId: string, cashierName: string, openingCash: number) => Promise<void>;
   getSummary: (shiftId: string, openingCash: number) => Promise<ShiftSummary>;
-  closeShift: (actualCash: number, notes?: string) => Promise<ShiftSummary & { closingCash: number; difference: number }>;
+  closeShift: (actualCash: number, notes?: string) => Promise<ClosedShift>;
   addCashFlow: (type: 'in' | 'out', amount: number, description: string) => Promise<void>;
+  dismissClosedShift: () => void;
   clearShift: () => void;
 }
 
@@ -28,11 +32,12 @@ async function computeSummary(shiftId: string, openingCash: number): Promise<Shi
 
   const { data: flowsData, error: flowsError } = await supabase
     .from('shift_cash_flows')
-    .select('type, amount')
-    .eq('shift_id', shiftId);
+    .select('id, shift_id, cashier_id, type, amount, description, created_at')
+    .eq('shift_id', shiftId)
+    .order('created_at', { ascending: true });
   if (flowsError) throw flowsError;
 
-  const flows = flowsData ?? [];
+  const flows = (flowsData ?? []) as ShiftCashFlow[];
   const cashIn = flows.filter(f => f.type === 'in').reduce((s, f) => s + f.amount, 0);
   const cashOut = flows.filter(f => f.type === 'out').reduce((s, f) => s + f.amount, 0);
 
@@ -48,11 +53,13 @@ async function computeSummary(shiftId: string, openingCash: number): Promise<Shi
     transferTotal,
     grandTotal,
     expectedCash: openingCash + cashTotal + cashIn - cashOut,
+    cashFlows: flows,
   };
 }
 
 export const useShiftStore = create<ShiftStore>((set, get) => ({
   currentShift: null,
+  closedShift: null,
   isLoading: false,
 
   fetchCurrentShift: async (cashierId) => {
@@ -88,7 +95,7 @@ export const useShiftStore = create<ShiftStore>((set, get) => ({
       .select()
       .single();
     if (error) throw error;
-    set({ currentShift: data });
+    set({ currentShift: data, closedShift: null });
   },
 
   getSummary: async (shiftId, openingCash) => {
@@ -101,6 +108,7 @@ export const useShiftStore = create<ShiftStore>((set, get) => ({
 
     const summary = await computeSummary(shift.id, shift.opening_cash);
     const difference = actualCash - summary.expectedCash;
+    const closedAt = new Date().toISOString();
 
     const { error } = await supabase
       .from('shifts')
@@ -110,13 +118,23 @@ export const useShiftStore = create<ShiftStore>((set, get) => ({
         expected_cash: summary.expectedCash,
         cash_difference: difference,
         notes: notes || null,
-        closed_at: new Date().toISOString(),
+        closed_at: closedAt,
       })
       .eq('id', shift.id);
     if (error) throw error;
 
-    set({ currentShift: null });
-    return { ...summary, closingCash: actualCash, difference };
+    const closedRow: Shift = {
+      ...shift,
+      status: 'closed',
+      closing_cash: actualCash,
+      expected_cash: summary.expectedCash,
+      cash_difference: difference,
+      notes: notes || null,
+      closed_at: closedAt,
+    };
+    const closed: ClosedShift = { shift: closedRow, summary };
+    set({ currentShift: null, closedShift: closed });
+    return closed;
   },
 
   addCashFlow: async (type, amount, description) => {
@@ -136,5 +154,7 @@ export const useShiftStore = create<ShiftStore>((set, get) => ({
     if (error) throw error;
   },
 
-  clearShift: () => set({ currentShift: null }),
+  dismissClosedShift: () => set({ closedShift: null }),
+
+  clearShift: () => set({ currentShift: null, closedShift: null }),
 }));

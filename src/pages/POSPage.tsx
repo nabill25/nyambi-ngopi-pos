@@ -11,6 +11,7 @@ import { CategoryFilter } from '../components/pos/CategoryFilter';
 import { SearchBar } from '../components/pos/SearchBar';
 import { OpenShiftModal } from '../components/pos/OpenShiftModal';
 import { CloseShiftModal } from '../components/pos/CloseShiftModal';
+import { ClosedShiftModal } from '../components/pos/ClosedShiftModal';
 import { CashFlowModal } from '../components/pos/CashFlowModal';
 import { HeldOrdersModal } from '../components/pos/HeldOrdersModal';
 import { useCartStore } from '../store/cartStore';
@@ -60,7 +61,12 @@ export function POSPage() {
   }
 
   if (!currentShift) {
-    return <OpenShiftModal />;
+    return (
+      <>
+        <OpenShiftModal />
+        <ClosedShiftModal />
+      </>
+    );
   }
 
   return (
