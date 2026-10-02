@@ -171,6 +171,11 @@ supabase/
 - Chart: Bar chart penjualan per hari
 - Top Produk: 10 produk terlaris
 - Export: CSV download
+- Semua akun kasir terintegrasi ke akun admin (data dibaca dari tabel yang sama; tidak dipisah per akun):
+  - Laporan (admin): filter periode + filter kasir ("Semua Kasir" atau satu akun), Penjualan per Kasir, Laporan Tutup Kasir (Shift) semua kasir (ketuk untuk buka/cetak ulang Z-report), Kas Keluar & Masuk Laci semua kasir
+  - Transaksi: admin memilih periode & kasir dan melihat semua transaksi (bukan hanya hari ini); akun kasir tetap melihat hari ini. Daftar update otomatis lewat Realtime (`useTableChanges`)
+  - Tabel `orders`, `shifts`, `shift_cash_flows` perlu masuk publication `supabase_realtime` (`supabase/migrations/010_realtime_reports.sql`) agar update otomatis; tanpa itu data tetap termuat saat halaman dibuka/Refresh
+  - Daftar kasir untuk filter diambil dari `profiles` TANPA kolom `pin` (`useCashiers`)
 
 ---
 

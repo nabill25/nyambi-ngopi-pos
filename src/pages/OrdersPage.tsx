@@ -1,37 +1,64 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Search, Eye, X, Printer, XCircle, RefreshCw, CheckCircle2, Receipt } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useOrders } from '../hooks/useOrders';
+import { useCashiers } from '../hooks/useCashiers';
+import { useDateRangeFilter } from '../hooks/useDateRangeFilter';
+import { useTableChanges } from '../hooks/useTableChanges';
 import { Order } from '../types';
 import { formatCurrency, formatDateTime, getPaymentMethodLabel, getStatusLabel, getStatusColor, cn } from '../lib/utils';
 import { useAuthStore } from '../store/authStore';
 import { useSettingsStore } from '../store/settingsStore';
 import { ShiftHistoryList } from '../components/pos/ShiftHistoryList';
 import { buildReceiptHTML } from '../components/pos/ReceiptModal';
+import { DateRangeFilter } from '../components/reports/DateRangeFilter';
+import { CashierFilter } from '../components/reports/CashierFilter';
 
 type Tab = 'transactions' | 'shifts';
 
+// Jumlah baris daftar yang ditampilkan per tahap; sisanya lewat tombol "Tampilkan lebih banyak"
+const PAGE_SIZE = 100;
+
 export function OrdersPage() {
-  const { orders, isLoading, error, fetchTodayOrders, cancelOrder, getOrderDetail } = useOrders();
+  const { orders, isLoading, error, fetchOrders, cancelOrder, getOrderDetail } = useOrders();
   const { isAdmin } = useAuthStore();
   const { settings } = useSettingsStore();
+  const { cashiers } = useCashiers(isAdmin());
+  const { selectedRange, setSelectedRange, customStart, setCustomStart, customEnd, setCustomEnd, getCurrentRange } = useDateRangeFilter('today');
+  const [cashierId, setCashierId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('transactions');
   const [search, setSearch] = useState('');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [detailOrder, setDetailOrder] = useState<Order | null>(null);
   const [cancelConfirm, setCancelConfirm] = useState<string | null>(null);
   const [cancelReason, setCancelReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
+  // Admin bisa memilih periode & kasir (transaksi semua akun kasir); akun kasir tetap melihat hari ini
+  const loadOrders = useCallback(async () => {
+    const range = getCurrentRange();
+    if (!range) return; // periode kustom belum lengkap
+    await fetchOrders(range.start.toISOString(), range.end.toISOString(), cashierId);
+  }, [getCurrentRange, fetchOrders, cashierId]);
+
   useEffect(() => {
-    fetchTodayOrders();
-  }, [fetchTodayOrders]);
+    void loadOrders();
+  }, [loadOrders]);
+
+  // Transaksi baru dari akun kasir mana pun langsung muncul tanpa refresh
+  useTableChanges(['orders'], loadOrders);
+
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE);
+  }, [search, cashierId, selectedRange, customStart, customEnd]);
 
   const filtered = orders.filter((o) =>
     o.order_number.toLowerCase().includes(search.toLowerCase()) ||
     (o.cashier_name ?? '').toLowerCase().includes(search.toLowerCase()) ||
     (o.customer_name ?? '').toLowerCase().includes(search.toLowerCase())
   );
+  const visibleOrders = filtered.slice(0, visibleCount);
 
   const handleViewDetail = async (orderId: string) => {
     const order = await getOrderDetail(orderId);
@@ -43,7 +70,7 @@ export function OrdersPage() {
     setIsCancelling(true);
     try {
       await cancelOrder(cancelConfirm, cancelReason.trim());
-      await fetchTodayOrders();
+      await loadOrders();
       setCancelConfirm(null);
       setCancelReason('');
       if (detailOrder?.id === cancelConfirm) setDetailOrder(null);
@@ -108,6 +135,22 @@ export function OrdersPage() {
         ) : (
           <motion.div key="transactions" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }} className="space-y-4">
 
+            {/* Filter periode & kasir — admin melihat transaksi semua akun kasir */}
+            {isAdmin() && (
+              <div className="flex flex-wrap items-center gap-3">
+                <DateRangeFilter
+                  value={selectedRange}
+                  onChange={setSelectedRange}
+                  customStart={customStart}
+                  customEnd={customEnd}
+                  onCustomStartChange={setCustomStart}
+                  onCustomEndChange={setCustomEnd}
+                  layoutId="activeOrdersRangeTab"
+                />
+                <CashierFilter cashiers={cashiers} value={cashierId} onChange={setCashierId} />
+              </div>
+            )}
+
             {/* Toolbar */}
             <div className="flex items-center gap-3">
               <div className="relative flex-1">
@@ -121,7 +164,7 @@ export function OrdersPage() {
                 />
               </div>
               <button
-                onClick={fetchTodayOrders}
+                onClick={() => void loadOrders()}
                 className="glass-btn p-2.5 rounded-xl text-slate-600 hover:text-slate-800 transition-all"
               >
                 <RefreshCw size={16} />
@@ -163,11 +206,11 @@ export function OrdersPage() {
             ) : filtered.length === 0 ? (
               <div className="text-center py-16 text-slate-400">
                 <Receipt size={40} className="mx-auto mb-3 opacity-30" />
-                <p className="text-sm">Belum ada transaksi hari ini</p>
+                <p className="text-sm">{selectedRange === 'today' ? 'Belum ada transaksi hari ini' : 'Tidak ada transaksi pada periode ini'}</p>
               </div>
             ) : (
               <div className="space-y-2">
-                {filtered.map((order, i) => (
+                {visibleOrders.map((order, i) => (
                   <motion.div
                     key={order.id}
                     initial={{ opacity: 0, y: 6 }}
@@ -229,6 +272,14 @@ export function OrdersPage() {
                     </div>
                   </motion.div>
                 ))}
+                {filtered.length > visibleCount && (
+                  <button
+                    onClick={() => setVisibleCount((count) => count + PAGE_SIZE)}
+                    className="glass-btn w-full py-3 rounded-2xl text-slate-600 hover:text-slate-800 text-sm font-medium transition-all"
+                  >
+                    Tampilkan lebih banyak ({filtered.length - visibleCount} lagi)
+                  </button>
+                )}
               </div>
             )}
           </motion.div>

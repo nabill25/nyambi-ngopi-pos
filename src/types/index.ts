@@ -333,3 +333,46 @@ export interface ReportFilters {
   startDate?: string;
   endDate?: string;
 }
+
+// ── Integrasi semua akun kasir ke akun admin ─────────────────
+// Pilihan kasir untuk filter laporan/transaksi. Hanya kolom aman dari tabel profiles (tanpa pin).
+export interface CashierOption {
+  id: string;
+  full_name: string;
+  role: UserRole;
+  is_active: boolean;
+}
+
+// Satu transaksi selesai untuk laporan (item hanya dipakai untuk HPP & produk terlaris)
+export interface ReportOrder {
+  id: string;
+  order_number: string;
+  total_amount: number;
+  payment_method: PaymentMethod;
+  created_at: string;
+  cashier_id: string | null;
+  cashier_name: string | null;
+  shift_id: string | null;
+  subtotal: number;
+  discount_amount: number;
+  tax_amount: number;
+  order_items?: { quantity: number; subtotal: number; product_name: string; product_cost?: number }[];
+}
+
+// Baris di daftar Transaksi: kolom ringan tanpa item (item baru diambil saat detail dibuka)
+export type OrderListItem = Pick<
+  Order,
+  'id' | 'order_number' | 'status' | 'payment_method' | 'total_amount' | 'created_at' | 'cashier_id' | 'cashier_name' | 'customer_name' | 'shift_id'
+>;
+
+// Rekap penjualan satu akun kasir pada periode laporan
+export interface CashierSales {
+  key: string;
+  cashier_id: string | null;
+  cashier_name: string;
+  order_count: number;
+  total: number;
+  cash_total: number;
+  qris_total: number;
+  transfer_total: number;
+}

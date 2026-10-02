@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { Order, OrderItem, CartItem, PaymentMethod } from '../types';
+import { Order, OrderItem, OrderListItem, CartItem, PaymentMethod } from '../types';
 import { generateOrderNumber } from '../lib/utils';
 import { isNetworkError } from '../lib/offlineCache';
 import { useAuthStore } from '../store/authStore';
@@ -86,8 +86,13 @@ export async function syncOfflineQueue() {
   }
 }
 
+// Daftar transaksi hanya butuh kolom ringan; item pesanan baru diambil saat detail dibuka (getOrderDetail)
+const ORDER_LIST_COLUMNS = 'id, order_number, status, payment_method, total_amount, created_at, cashier_id, cashier_name, customer_name, shift_id';
+const ORDER_PAGE_SIZE = 1000; // batas baris per permintaan di PostgREST
+const MAX_LISTED_ORDERS = 10000;
+
 export function useOrders() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderListItem[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { profile } = useAuthStore();
@@ -95,22 +100,47 @@ export function useOrders() {
   const { currentShift } = useShiftStore();
   const enqueueOffline = useOfflineQueueStore((s) => s.enqueue);
 
-  const fetchOrders = useCallback(async (startDate?: string, endDate?: string) => {
+  // Semua transaksi (tidak dibatalkan) pada periode, dari semua akun kasir — atau satu kasir jika cashierId diisi.
+  // Diambil bertahap sampai habis supaya tidak terpotong oleh batas baris per permintaan.
+  const fetchOrders = useCallback(async (startDate?: string, endDate?: string, cashierId?: string | null) => {
     setIsLoading(true);
     setError(null);
     try {
-      let query = supabase
-        .from('orders')
-        .select('*, order_items(*)')
-        .neq('status', 'cancelled')
-        .order('created_at', { ascending: false });
+      const listed: OrderListItem[] = [];
+      const seen = new Set<string>();
+      let offset = 0;
+      let total = Infinity;
 
-      if (startDate) query = query.gte('created_at', startDate);
-      if (endDate) query = query.lte('created_at', endDate);
+      while (offset < Math.min(total, MAX_LISTED_ORDERS)) {
+        let query = supabase
+          .from('orders')
+          .select(ORDER_LIST_COLUMNS, { count: 'exact' })
+          .neq('status', 'cancelled')
+          .order('created_at', { ascending: false })
+          .range(offset, offset + ORDER_PAGE_SIZE - 1);
 
-      const { data, error } = await query.limit(100);
-      if (error) throw error;
-      setOrders(data ?? []);
+        if (startDate) query = query.gte('created_at', startDate);
+        if (endDate) query = query.lte('created_at', endDate);
+        if (cashierId) query = query.eq('cashier_id', cashierId);
+
+        const { data, error, count } = await query;
+        if (error) throw error;
+
+        const rows = (data ?? []) as OrderListItem[];
+        if (rows.length === 0) break;
+        // Transaksi baru yang masuk di tengah pengambilan menggeser halaman: buang duplikat.
+        // Offset maju sebanyak baris yang diambil (bukan yang unik) supaya loop selalu berakhir.
+        rows.forEach((row) => {
+          if (!seen.has(row.id)) {
+            seen.add(row.id);
+            listed.push(row);
+          }
+        });
+        offset += rows.length;
+        total = count ?? offset;
+      }
+
+      setOrders(listed);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load orders');
     } finally {

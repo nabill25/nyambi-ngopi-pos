@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import { SalesReport, DailySales, TopProduct, PaymentBreakdown } from '../types';
+import { SalesReport, DailySales, TopProduct, PaymentBreakdown, CashierSales, ReportOrder } from '../types';
 import { format, eachDayOfInterval } from 'date-fns';
 import { formatCurrency } from '../lib/utils';
+import { groupSalesByCashier } from '../lib/reportAggregates';
 
 export function useReports() {
   const [isLoading, setIsLoading] = useState(false);
@@ -11,9 +12,11 @@ export function useReports() {
   const [dailySales, setDailySales] = useState<DailySales[]>([]);
   const [topProducts, setTopProducts] = useState<TopProduct[]>([]);
   const [paymentBreakdown, setPaymentBreakdown] = useState<PaymentBreakdown[]>([]);
-  const [rawOrders, setRawOrders] = useState<any[]>([]);
+  const [cashierSales, setCashierSales] = useState<CashierSales[]>([]);
+  const [rawOrders, setRawOrders] = useState<ReportOrder[]>([]);
 
-  const fetchReport = useCallback(async (startDate: Date, endDate: Date) => {
+  // cashierId = null/undefined berarti transaksi semua akun kasir
+  const fetchReport = useCallback(async (startDate: Date, endDate: Date, cashierId?: string | null) => {
     setIsLoading(true);
     setError(null);
 
@@ -22,18 +25,22 @@ export function useReports() {
 
     try {
       // ── Fetch completed orders in range ──────────────────────
-      const { data: orders, error: ordersError } = await supabase
+      let ordersQuery = supabase
         .from('orders')
-        .select('id, order_number, total_amount, payment_method, created_at, cashier_name, subtotal, discount_amount, tax_amount, order_items(quantity, subtotal, product_name, product_cost)')
+        .select('id, order_number, total_amount, payment_method, created_at, cashier_id, cashier_name, shift_id, subtotal, discount_amount, tax_amount, order_items(quantity, subtotal, product_name, product_cost)')
         .eq('status', 'completed')
         .gte('created_at', start)
         .lte('created_at', end)
         .order('created_at', { ascending: false });
+      if (cashierId) ordersQuery = ordersQuery.eq('cashier_id', cashierId);
+
+      const { data: orders, error: ordersError } = await ordersQuery;
 
       if (ordersError) throw ordersError;
 
-      const completedOrders = orders ?? [];
+      const completedOrders = (orders ?? []) as ReportOrder[];
       setRawOrders(completedOrders);
+      setCashierSales(groupSalesByCashier(completedOrders));
 
       const totalRevenue = completedOrders.reduce((sum, o) => sum + (o.total_amount ?? 0), 0);
       const totalOrders = completedOrders.length;
@@ -117,7 +124,7 @@ export function useReports() {
     }
   }, []);
 
-  const exportPDF = (orders: { order_number?: string; created_at: string; total_amount: number; payment_method: string; cashier_name?: string; subtotal?: number; discount_amount?: number; tax_amount?: number }[], rangeLabel: string) => {
+  const exportPDF = (orders: { order_number?: string; created_at: string; total_amount: number; payment_method: string; cashier_name?: string | null; subtotal?: number; discount_amount?: number; tax_amount?: number }[], rangeLabel: string) => {
     const totalRevenue = summary?.total_revenue ?? orders.reduce((s, o) => s + o.total_amount, 0);
     const totalOrders = summary?.total_orders ?? orders.length;
     const totalProfit = summary?.total_profit ?? 0;
@@ -244,6 +251,7 @@ export function useReports() {
     dailySales,
     topProducts,
     paymentBreakdown,
+    cashierSales,
     rawOrders,
     fetchReport,
     exportPDF,
